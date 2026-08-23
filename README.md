@@ -119,57 +119,73 @@ All containerized and virtualized services mapped by hypervisor node, network se
 
 This repository hosts all core configuration scripts and deployment code to automate our homelab:
 
-1. **Proxmox Sequential Update Automation Suite ([`/ansible`](ansible)):**
+1. **Proxmox Sequential Update Automation Suite ([`iac/ansible`](iac/ansible)):**
    - **Sequential Execution (`serial: 1`)**: Updates PVE host nodes and guest workloads strictly one at a time with cluster quorum verification (`pvecm status`).
    - **Guest Workload Protection**: Takes automated pre-update snapshots (`pct snapshot` / `qm snapshot`), executes guest package upgrades (`pct exec`), performs health checks, and triggers automated rollbacks on failure.
    - **Automated Schedule**: Programmed for **every 3rd Sunday of the month at 2:00 AM Pacific Time (`America/Los_Angeles`)** via Systemd Timer (`proxmox-update.timer`) and Crontab (`0 2 15-21 * *`).
 
-2. **Terraform (`/terraform`):**
-   - Reusable LXC container structure mapped into modules (`/terraform/proxmox/modules/lxc`).
-   - Bulakan configurations are kept in `/terraform/proxmox/lxc.tf` as structural reference.
-   - Cebu active modules are maintained in `/terraform/proxmox/cebu.tf` for sandbox and mirror environments.
+2. **Terraform ([`iac/terraform`](iac/terraform)):**
+   - Reusable LXC container structure mapped into modules (`iac/terraform/proxmox/modules/lxc`).
+   - Bulakan configurations are kept in `iac/terraform/proxmox/lxc.tf` as structural reference.
+   - Cebu active modules are maintained in `iac/terraform/proxmox/cebu.tf` for sandbox and mirror environments.
 
-3. **Media Automation Scripts (`/06-Guides` & `/scripts`):**
-   - PowerShell scripts designed to scan, standardize, clean up, and rename media metadata across the storage pools:
-     - [`animated-movies-cleanup.ps1`](06-Guides/animated-movies-cleanup.ps1): Prunes redundant metadata.
-     - [`animated-movies-rename.ps1`](06-Guides/animated-movies-rename.ps1): Standardizes files to match custom anime conventions.
-     - [`human-movies-standardize.ps1`](06-Guides/human-movies-standardize.ps1) & [`human-movies-deep-cleanup.ps1`](06-Guides/human-movies-deep-cleanup.ps1): Cleans and standardizes live action movie names.
+3. **Container Stacks ([`compose/`](compose)):**
+   - [`compose/arr-stack/`](compose/arr-stack): Sonarr, Radarr, Prowlarr, Jackett, and Transmission with Gluetun WireGuard killswitch.
+   - [`compose/dashboard/`](compose/dashboard): Homepage dashboard YAML configs and docker-compose.
+   - [`compose/immich/`](compose/immich): Machine learning photo management stack.
 
----
-
-## 📂 Vault Directory Map
-
-Navigate our detailed documentation folders easily:
-
-* 🖥️ **[02-Proxmox](02-Proxmox)** — Virtualization architecture, backups, failover scripts, and host tuning.
-  * [Proxmox Host Overview](02-Proxmox/Proxmox%20Overview.md)
-  * [Proxmox Update Automation Solutions](02-Proxmox/Proxmox-Update-Automation-Solutions.md)
-  * [Rsync Sync Guide](02-Proxmox/Rsync%20Guide.md)
-* 💾 **[03-Unraid (Deprecated)](03-Unraid)** — Historic NAS documentation and array logs.
-  * [Unraid Legacy Overview](03-Unraid/Unraid%20Overview.md)
-* 🌐 **[04-Network](04-Network)** — Gateway rules, VLAN setup, DNS settings, and routing details.
-  * [Network Maps & Subnets](04-Network/Network%20Overview.md)
-  * [UniFi UCG Max Setup](04-Network/UniFi%20Router%20Setup.md)
-* 📁 **[04-Synology](04-Synology)** — Storage mounts, NFS configurations, and NAS backup protocols.
-  * [Synology Overview & Configs](04-Synology/Synology%20Overview.md)
-* 🔧 **[05-Services](05-Services)** — Configuration variables, port mappings, and settings for deployed applications.
-  * [Master Services Index](05-Services/Services%20Index.md)
-  * [Authentik SSO Configuration](05-Services/Authentik.md)
-  * [Nginx Proxy Manager Setup](05-Services/Nginx%20Proxy%20Manager.md)
-  * [Cloudflared Tunnels Configuration](05-Services/Cloudflared.md)
-  * [Netbootxyz PXE Configuration](05-Services/Netbootxyz.md)
-* 📖 **[06-Guides](06-Guides)** — Comprehensive operational, disaster recovery, and maintenance walk-throughs.
-  * [Master Guides Index](06-Guides/Guides%20Index.md)
-  * [Plex Metadata Sync & Cloning Guide](06-Guides/Plex%20Cloning%20Guide.md)
-  * [Active-Active Cloudflare Tunnel Setup](06-Guides/Cloudflare-Tunnel-Setup.md)
-  * [Secrets Management Best Practices](06-Guides/Homelab-Secrets-Management-Best-Practices.md)
-  * [VLAN Segmentation & Firewall Roadmap](06-Guides/VLAN-Segmentation-Roadmap.md)
+4. **Media Automation Scripts ([`scripts/media-tools`](scripts/media-tools)):**
+   - PowerShell and Python scripts designed to scan, standardize, clean up, and rename media metadata across the storage pools:
+     - [`animated-movies-cleanup.ps1`](scripts/media-tools/animated-movies-cleanup.ps1): Prunes redundant metadata.
+     - [`animated-movies-rename.ps1`](scripts/media-tools/animated-movies-rename.ps1): Standardizes files to match custom anime conventions.
+     - [`human-movies-standardize.ps1`](scripts/media-tools/human-movies-standardize.ps1) & [`human-movies-deep-cleanup.ps1`](scripts/media-tools/human-movies-deep-cleanup.ps1): Cleans and standardizes live action movie names.
 
 ---
 
-## 🚀 Getting Started & Operations
+## 📂 Repository Directory Map
 
-If you are setting up or managing parts of the Homelab-Net network:
-1. **Adding a host/service:** Reference our [Plex Cloning Guide](06-Guides/Plex%20Cloning%20Guide.md) or [Dapitan Plex Setup](06-Guides/Dapitan-Plex-Setup-Recovery-2026-07-24.md).
-2. **Accessing Consoles:** Review [How to Access Proxmox](06-Guides/How%20to%20Access%20Proxmox.md) to log in safely.
-3. **Updating Hosts:** Read [Proxmox Update Automation Solutions](02-Proxmox/Proxmox-Update-Automation-Solutions.md) before pushing system patches.
+Navigate our structured repository:
+
+```
+homelab-infrastructure/
+├── docs/                                 # 📖 Architectural documentation & operational runbooks
+│   ├── architecture/                     # Cluster topology, VLAN schemas, and storage architecture
+│   │   ├── cluster-topology.md           # Proxmox VE hypervisor cluster architecture
+│   │   ├── network-vlan-schema.md        # 802.1Q VLAN matrix & DNS configuration
+│   │   ├── storage-architecture.md       # Synology NAS & ZFS storage tiering
+│   │   └── unifi-gateway-setup.md        # UniFi UCG Max routing & firewall policies
+│   ├── guides/                           # Step-by-step categorized engineering runbooks
+│   │   ├── media-automation/             # Arr stack, Plex GPU transcode, Jellyfin HA, metadata guides
+│   │   ├── security-ingress/             # Authentik SSO, Cloudflare tunnels, NPM SSL, Wazuh SIEM
+│   │   ├── hypervisor-cluster/           # PVE cluster join, UEFI PXE boot, VM optimization
+│   │   └── disaster-recovery/            # DR audits, mount recoveries, storage deadlock solutions
+│   └── services/                         # Service catalog & individual application deep-dives
+│       ├── services-index.md             # Master services catalog & port mapping
+│       ├── authentik.md                  # Central SSO & MFA configuration
+│       ├── nginx-proxy-manager.md        # Reverse proxy & SSL termination
+│       └── cloudflared.md                # Zero-inbound Cloudflare tunnel ingress
+│
+├── iac/                                  # 🏗️ Infrastructure-as-Code (Declarative)
+│   ├── terraform/                        # Terraform modules & environment definitions
+│   └── ansible/                          # Ansible playbooks (rolling cluster updates)
+│
+├── compose/                              # 🐳 Version-controlled Docker Compose templates
+│   ├── arr-stack/                        # Acquisition stack with Surfshark WireGuard killswitch
+│   ├── dashboard/                        # Homepage & Heimdall dashboard configs
+│   └── immich/                           # Machine learning photo vault stack
+│
+└── scripts/                              # ⚡ Operational automation scripts
+    ├── backup-replication/               # Rsync & Synology backup sync scripts
+    ├── maintenance/                      # Automated update rollback & health check scripts
+    └── media-tools/                      # Metadata standardization & clean-up tools
+```
+
+---
+
+## 🚀 Getting Started & Reference Runbooks
+
+Key foundational runbooks:
+1. **SSO & Security Ingress:** [Authentik OIDC Setup Guide](docs/guides/security-ingress/Authentik-Immich-OAuth2-OIDC-Setup-Guide-2026-07-31.md) & [Cloudflare Tunnel Guide](docs/guides/security-ingress/Cloudflare-Tunnel-Setup.md).
+2. **Media Stack:** [Master Arr Stack & WireGuard Setup](docs/guides/media-automation/Master-Arr-Stack-Sonarr-NPM-WireGuard-Setup-Guide-2026-08-22.md).
+3. **Disaster Recovery:** [Disaster Recovery Audit](docs/guides/disaster-recovery/Disaster%20Recovery%20-%20Infrastructure%20Audit.md).
+4. **Update Automation:** [Proxmox Update Automation](docs/guides/hypervisor-cluster/Proxmox-Update-Automation-Solutions.md).

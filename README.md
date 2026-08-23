@@ -81,38 +81,41 @@ Our infrastructure is architected as a resilient, multi-node **Proxmox Virtual E
 
 ## 🔧 Master Service Catalog
 
-All containerized and virtualized services mapped by hypervisor node, network segment, and functional role:
+### 🔐 Identity, Ingress & Security
+| Service | Host & ID | VLAN | Architectural Function |
+|:---|:---:|:---:|:---|
+| **Authentik SSO** | Cebu `CT 103` | VLAN 110 | Central Identity Provider, MFA & OIDC (`HTTPS: 443`) |
+| **Nginx Proxy Manager** | Cebu `CT 105` | VLAN 120 | Primary Ingress Reverse Proxy with Wildcard Let's Encrypt SSL |
+| **Nginx Proxy Manager** | Bulakan `CT 102` | VLAN 120 | Standby Cold Failover Reverse Proxy (Stopped) |
+| **Cloudflared Tunnel** | Bulakan `CT 304` | VLAN 120 | Primary Zero-Inbound Cloudflare Edge Ingress Tunnel |
+| **Cloudflared Tunnel** | Cebu `CT 404` | VLAN 120 | Redundant Active Zero-Inbound Cloudflare Edge Tunnel |
+| **Pi-hole DNS (Primary)** | Bulakan `CT 301` | VLAN 1 | Core DNS Ad-blocker & Split-Horizon Local Domain Resolver |
+| **Pi-hole DNS (Secondary)**| Cebu `CT 401` | VLAN 1 | High-Availability Mirrored DNS Failover Resolver |
+| **Wazuh SIEM & XDR** | Cebu `VM 250` | VLAN 10 | Security Threat Analytics, Host Integrity & Event Management |
 
-| Category | Service Name | ID | Host Node | Network / VLAN Segment | Port / Ingress | Architecture & Security Controls |
-|:---|:---|:---:|:---:|:---:|:---:|:---|
-| **Identity & SSO** | Authentik | CT 103 | Cebu | VLAN 110 (Services) | HTTPS / 443 | 🟢 Central SSO, MFA & OAuth2/OIDC Provider |
-| **Reverse Proxy** | Nginx Proxy Manager (Primary) | CT 105 | Cebu | VLAN 120 (DMZ) | HTTP: 80 / HTTPS: 443 | 🟢 Active Ingress Controller with Wildcard Let's Encrypt SSL |
-| | Nginx Proxy Manager (Standby) | CT 102 | Bulakan | VLAN 120 (DMZ) | HTTP: 80 / HTTPS: 443 | ⚪ Standby Cold Failover Proxy (Stopped) |
-| **Ingress Tunnels**| Cloudflared (Bulakan) | CT 304 | Bulakan | VLAN 120 (DMZ) | Encrypted Edge Tunnel | 🟢 Zero-Inbound Cloudflare Tunnel Ingress |
-| | Cloudflared (Cebu) | CT 404 | Cebu | VLAN 120 (DMZ) | Encrypted Edge Tunnel | 🟢 Redundant Active Zero-Inbound Tunnel |
-| **Core DNS** | Pi-hole (Primary) | CT 301 | Bulakan | VLAN 1 (Management) | DNS: 53 | 🟢 Primary DNS Ad-blocker & Split-Horizon Resolver |
-| | Pi-hole (Secondary) | CT 401 | Cebu | VLAN 1 (Management) | DNS: 53 | 🟢 Secondary Mirrored High-Availability DNS Resolver |
-| **Arr Stack** | Arr Stack (Sonarr/Radarr/Prowlarr/Transmission/Jackett/Bazarr) | CT 417 | Cebu | VLAN 110 (Services) | Web: 8989, 7878, 9696, 9091 | 🟢 Complete Acquisition Stack with Surfshark WireGuard Killswitch |
-| **Media Servers** | Plex Media Server (Primary) | CT 104 | Bulakan | VLAN 1 (Management) | Web: 32400 | 🟢 Intel 9th Gen QuickSync GPU & RAM Transcoding |
-| | Plex Media Server (Dapitan) | CT 509 | Dapitan | VLAN 110 (Services) | Web: 32400 | 🟢 Direct 18TB ZFS Storage Mount & GPU Acceleration |
-| | Jellyfin (Primary) | CT 110 | Bulakan | VLAN 110 (Services) | Web: 8096 | 🟢 Primary Jellyfin Instance with Intel GPU Passthrough |
-| | Jellyfin (Cebu Standby) | CT 416 | Cebu | VLAN 110 (Services) | Web: 8096 | 🟢 Cold Failover Jellyfin Container |
-| | Jellyfin (Dapitan Standby) | CT 510 | Dapitan | VLAN 110 (Services) | Web: 8096 | 🟢 Secondary Jellyfin Instance (18TB ZFS Direct) |
-| | Audiobookshelf | CT 100 | Bulakan | VLAN 1 (Management) | Web: 13378 | 🟢 Self-hosted Audiobook & Podcast Streaming |
-| **Photo Vault** | Immich (Primary) | CT 504 | Dapitan | VLAN 110 (Services) | Web: 2283 | 🟢 High-Performance Machine Learning Vault (18TB ZFS) |
-| **Infrastructure & Tools** | Apache Guacamole | CT 114 | Dapitan | VLAN 110 (Services) | Web: 8080 | 🟢 Clientless HTML5 Remote Desktop Gateway (RDP/VNC/SSH) |
-| | Floci Stack | CT 512 | Dapitan | VLAN 110 (Services) | Ports: 4566, 4577, 4588 | 🟢 Multi-Cloud Emulation & Local Sandbox |
-| | UEFI PXE Boot Server | CT 513 | Dapitan | VLAN 110 (Services) | TFTP / HTTP: 80 | 🟢 Automated OS Network Deployment Engine |
-| | BookOrbit | CT 514 | Dapitan | VLAN 110 (Services) | Web: 3000 | 🟢 Modern E-book Library & Reader |
-| | Calibre-Web | CT 113 | Bulakan | VLAN 1 (Management) | Web: 8083 | 🟢 E-book Organization & Synology Mount |
-| | Homepage Dashboard | CT 116 | Bulakan | VLAN 1 (Management) | Web: 3000 | 🟢 Unified Modern Service Status Portal |
-| | Heimdall Dashboard | CT 115 | Bulakan | VLAN 1 (Management) | Web: 80 | 🟢 Application Quick-Access Launchpad |
-| **Security & SIEM** | Wazuh SIEM | VM 250 | Cebu | VLAN 10 (SecOps) | Agent: 1514 / Web: 443 | 🟢 Real-time Threat Detection, File Integrity & SIEM |
-| **Workstations & Smart Home** | Linux Mint Remote Desktop | VM 505 | Dapitan | VLAN 20 (Trusted) | CRD / RDP | 🟢 Isolated Jump Box (128GB NVMe Fast Storage) |
-| | Home Assistant OS (HAOS) | VM 111 | Dapitan | VLAN 1 (Management) | Web: 8123 | 🟢 Smart Home Automation Controller |
-| | Bastion Jump Host | VM 203 | Bulakan | VLAN 1 (Management) | SSH: 22 | 🟢 Administrative SSH Management Bastion |
-| **Network Storage**| Synology NAS (PNAS) | Host | Synology | VLAN 1 (Management) | SMB / NFS | 🟢 23TB High-Availability CIFS/NFS Shared Cluster Pool |
-| | Dapitan ZFS Bulk Storage | Host | Dapitan | VLAN 1 (Management) | ZFS Datasets | 🟢 18TB IronWolf Direct-Attached Storage Pool |
+### 🎬 Media Streaming & Automation
+| Service | Host & ID | VLAN | Architectural Function |
+|:---|:---:|:---:|:---|
+| **Consolidated Arr Stack** | Cebu `CT 417` | VLAN 110 | Sonarr/Radarr/Prowlarr/Transmission with Surfshark WireGuard Killswitch |
+| **Plex Media Server** | Bulakan `CT 104` | VLAN 1 | Primary Media Server with Intel 9th Gen QuickSync GPU & RAM Transcode |
+| **Plex Media Server** | Dapitan `CT 509` | VLAN 110 | Bulk Media Server with 18TB Direct ZFS Storage Mount |
+| **Jellyfin Media Server** | Bulakan `CT 110` | VLAN 110 | Primary Jellyfin Server with Intel GPU Passthrough |
+| **Jellyfin (Standby)** | Cebu `CT 416` | VLAN 110 | Failover Jellyfin Container for High-Availability |
+| **Jellyfin (Bulk)** | Dapitan `CT 510` | VLAN 110 | Secondary Jellyfin Server with 18TB Direct ZFS Mount |
+| **Audiobookshelf** | Bulakan `CT 100` | VLAN 1 | Self-hosted Audiobook & Podcast Streaming Server (`Port: 13378`) |
+
+### 📁 Storage, Tools & Workstations
+| Service | Host & ID | VLAN | Architectural Function |
+|:---|:---:|:---:|:---|
+| **Immich Photo Vault** | Dapitan `CT 504` | VLAN 110 | High-Performance ML Photo/Video Backup on 18TB ZFS Storage |
+| **Apache Guacamole** | Dapitan `CT 114` | VLAN 110 | Clientless HTML5 Remote Desktop Gateway (RDP, VNC, SSH) |
+| **UEFI PXE Boot Server** | Dapitan `CT 513` | VLAN 110 | Automated OS Network Deployment Engine |
+| **BookOrbit / Calibre** | Dapitan `CT 514` | VLAN 110 | E-book Library Management & Multi-Format Reader |
+| **Homepage Portal** | Bulakan `CT 116` | VLAN 1 | Central Unified Homelab Status & Dashboard Portal |
+| **Linux Mint Desktop** | Dapitan `VM 505` | VLAN 20 | Isolated Remote Management Workstation (128GB Fast Storage) |
+| **Home Assistant (HAOS)** | Dapitan `VM 111` | VLAN 1 | Smart Home Automation Controller |
+| **Synology PNAS** | Synology Host | VLAN 1 | 23TB High-Availability CIFS/NFS Shared Storage Pool |
+| **Dapitan 18TB ZFS** | Dapitan Host | VLAN 1 | Direct-Attached IronWolf ZFS Bulk Storage Pool |
 
 ---
 

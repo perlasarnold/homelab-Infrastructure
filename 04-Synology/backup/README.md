@@ -124,8 +124,8 @@ When issues arise, check the export for:
 2. **Network Settings** (`network` section)
    - Control Panel → Network → General
    - Server name: `PNAS`
-   - Default gateway: `192.168.1.1`
-   - DNS: `192.168.1.1` (update to Pi-hole: `192.168.1.3`)
+   - Default gateway: `VLAN 1 [Gateway]`
+   - DNS: `VLAN 1 [Gateway]` (update to Pi-hole: `VLAN 1 (Mgmt)`)
 
 3. **Storage** (`storage` section)
    - Storage Manager → Create storage pool (match RAID type)

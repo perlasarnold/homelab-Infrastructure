@@ -4,8 +4,8 @@
 
 variable "unifi_api_url" {
   type        = string
-  description = "URL of the UniFi Controller / Gateway Max (e.g. https://192.168.1.1:8443)"
-  default     = "https://192.168.1.1"
+  description = "URL of the UniFi Controller / Gateway Max (e.g. https://VLAN 1 [Gateway]:8443)"
+  default     = "https://VLAN 1 [Gateway]"
 }
 
 variable "unifi_username" {
@@ -36,13 +36,13 @@ variable "unifi_allow_insecure" {
 # Subnet CIDR definitions for Class C foundation
 variable "vlan_mgmt_cidr" {
   type        = string
-  default     = "192.168.10.1/24"
+  default     = "VLAN 10 (MGMT/SecOps)/24"
   description = "VLAN 10 MGMT Gateway IP and Subnet"
 }
 
 variable "vlan_trusted_cidr" {
   type        = string
-  default     = "192.168.20.1/24"
+  default     = "VLAN 20 (Trusted)/24"
   description = "VLAN 20 TRUSTED Gateway IP and Subnet"
 }
 
@@ -54,12 +54,12 @@ variable "vlan_iot_cidr" {
 
 variable "vlan_services_cidr" {
   type        = string
-  default     = "192.168.110.1/24"
+  default     = "VLAN 110 (Services)/24"
   description = "VLAN 110 SERVICES Gateway IP and Subnet"
 }
 
 variable "vlan_dmz_cidr" {
   type        = string
-  default     = "192.168.120.1/24"
+  default     = "VLAN 120 (DMZ)/24"
   description = "VLAN 120 DMZ Gateway IP and Subnet"
 }

@@ -11,7 +11,7 @@ set -Eeuo pipefail
 # - no source ownership/permission propagation
 # - one active copy process at a time
 
-readonly SOURCE_SERVER="${SOURCE_SERVER:-192.168.1.12}"
+readonly SOURCE_SERVER="${SOURCE_SERVER:-VLAN 1 [MGMT-NAS]}"
 readonly SOURCE_SHARE="${SOURCE_SHARE:-Seagate}"
 readonly SOURCE_SUBDIR="${SOURCE_SUBDIR:-Share/TV Shows}"
 readonly SOURCE_MOUNT="${SOURCE_MOUNT:-/mnt/source-pnas-seagate-tv}"

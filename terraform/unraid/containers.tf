@@ -1,6 +1,6 @@
 ###############################################################################
 # Unraid Docker Containers
-# Host: Mercado (192.168.1.24) · Unraid 7.2.4
+# Host: Mercado (VLAN 1 (Mgmt)) · Unraid 7.2.4
 # Discovered: 2026-04-11
 #
 # Import syntax:
@@ -47,7 +47,7 @@ resource "docker_image" "audiobookshelf" {
 
 # ---------------------------------------------------------------------------
 # binhex-official-pihole  [RUNNING]
-# Pi-hole DNS sinkhole — macvlan on br0 / 192.168.1.3
+# Pi-hole DNS sinkhole — macvlan on br0 / VLAN 1 (Mgmt)
 # ---------------------------------------------------------------------------
 resource "docker_container" "pihole" {
   name         = "binhex-official-pihole"
@@ -56,7 +56,7 @@ resource "docker_container" "pihole" {
   network_mode = "br0"
 
   # Pi-hole requires a static IP on the LAN for DNS to work
-  # Set in Unraid Docker template as macro network IP = 192.168.1.3
+  # Set in Unraid Docker template as macro network IP = VLAN 1 (Mgmt)
 
   volumes {
     host_path      = "${var.appdata_path}/pihole/pihole"

@@ -31,8 +31,8 @@ resource "proxmox_virtual_environment_container" "torrent_box_dapitan" {
 
     ip_config {
       ipv4 {
-        address = "192.168.1.71/24"
-        gateway = "192.168.1.1"
+        address = "VLAN 1 (Mgmt)/24"
+        gateway = "VLAN 1 [Gateway]"
       }
     }
   }

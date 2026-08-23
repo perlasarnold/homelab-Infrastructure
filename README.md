@@ -14,114 +14,104 @@ Welcome to the **Homelab-Net / Core Homelab and Documentation Vault**. This repo
 
 ## 🗺️ Cluster Topology & Data Flow
 
-Our homelab has evolved into a resilient, multi-node **Proxmox Virtual Environment** cluster connected with high-speed local storage, shared Synology NAS storage, Dapitan bulk ZFS storage, and an automated media stack.
+Our homelab is architected as a resilient, multi-node **Proxmox Virtual Environment** cluster connected with high-speed local storage, shared Synology NAS storage, bulk ZFS storage tiers, and an automated media/compute stack isolated across 802.1Q VLANs.
 
 ```
-                  ┌───────────────────────┐
-                  │ UniFi UCG Max Gateway │ (192.168.1.1)
-                  └───────────┬───────────┘
-                              │
-            ┌─────────────────┼─────────────────┐
-            ▼                 ▼                 ▼
-┌──────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐
-│   Proxmox BULAKAN    │ │     Proxmox CEBU     │ │   Proxmox DAPITAN    │
-│   (Primary Node)     │ │   (Secondary Node)   │ │  (Bulk Storage Node) │
-│    192.168.1.25      │ │     192.168.1.26     │ │    192.168.1.27      │
-└───────────┬──────────┘ └───────────┬──────────┘ └───────────┬──────────┘
-            │                        │                        │
-            ├─► LXC Containers       ├─► LXC Containers       ├─► 18TB ZFS Storage
-            │   (Arr Stack, Plex,    │   (Authentik, NPM,     │   (/mnt/bindmounts/
-            │    Jellyfin, PiHole)   │    Pi-Hole, Wazuh)     │    media-data)
-            │                        │                        │
-            └─► VMs (Win10)          └─► VMs (Win10, HAOS)    └─► LXC Containers
-                                                                  (Immich, Plex,
-                                                                   Jellyfin, Photo)
-            ┌─────────────────────────────────────────────────────────────┐
-            │                  Active Network Storage                     │
-            │  1. PNAS Synology (192.168.1.12) ── Shared PVE & Media      │
-            │  2. Dapitan Local Debian Share (192.168.1.27) ── 18TB ZFS   │
-            └─────────────────────────────────────────────────────────────┘
+                      ┌─────────────────────────────────┐
+                      │      UniFi UCG Max Gateway      │  (VLAN 1 Management & Routing)
+                      └────────────────┬────────────────┘
+                                       │
+                ┌──────────────────────┼──────────────────────┐
+                ▼                      ▼                      ▼
+    ┌──────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐
+    │   Proxmox BULAKAN    │ │     Proxmox CEBU     │ │   Proxmox DAPITAN    │
+    │   (Primary Hypervisor)│ │  (Secondary Hypervisor)│ │  (Bulk Storage / Media) │
+    │   VLAN 1 [Management]│ │   VLAN 1 [Management]│ │   VLAN 1 [Management]│
+    └───────────┬──────────┘ └───────────┬──────────┘ └───────────┬──────────┘
+                │                        │                        │
+                ├─► LXC (VLAN 110/120/1) ├─► LXC (VLAN 110/120/1) ├─► 18TB ZFS Direct Mount
+                │   (Plex, Jellyfin,     │   (Authentik SSO, NPM, │   (/mnt/bindmounts)
+                │    Cloudflared, PiHole)│    Arr Stack, Wazuh)   │   (Immich, Plex,
+                │                        │                        │    Jellyfin, PXE)
+                └─► VMs (Win10 Bastion)  └─► VMs (Wazuh SIEM)     └─► VMs (HAOS, Mint Jump Box)
+                ┌─────────────────────────────────────────────────────────────┐
+                │                  Active Network Storage                     │
+                │  1. PNAS Synology (VLAN 1 [Management]) ── Shared PVE Storage│
+                │  2. Dapitan ZFS Pool (VLAN 1 [Management]) ── 18TB ZFS Bulk │
+                └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🖥️ Core Infrastructure Nodes
 
-### 1. Proxmox Bulakan (`192.168.1.25`)
+### 1. Proxmox Bulakan (`VLAN 1 [Management]`)
 * **Hardware & OS:** Intel Core i5-9500T (6 Cores) | 32GB RAM | PVE 9.2.5
 * **Network Redundancy:** Active-Backup Bond (`bond0`) combining onboard Intel NIC (`enp1s0`) and a backup USB Realtek NIC (`enx000000000000`) to ensure zero-downtime path failover.
 * **Storage Pools:** `Bulakan-ZFS` (2TB SSD ZFS pool) + mounted Synology storage.
-* **Role:** Primary Node. Runs core services, the primary reverse proxy, and media orchestration. Bulakan containers are managed manually using helper scripts to ensure high runtime stability.
+* **Role:** Primary Hypervisor Node. Runs core services, secondary DNS, and primary media orchestration. Bulakan containers are managed manually using helper scripts to ensure high runtime stability.
 
-### 2. Proxmox Cebu (`192.168.1.26`)
+### 2. Proxmox Cebu (`VLAN 1 [Management]`)
 * **Hardware & Storage:** Local `cebu-zfs` pool (2TB SSD) | Mounted Synology shares (`PNAS-Seagate`).
-* **Role:** Replication Target, Secondary Core, and Backup target. Hosts active services including Authentik SSO, primary Nginx Proxy Manager (`npm-cebu`), and security SIEM.
+* **Role:** Secondary Hypervisor & Ingress Gateway. Hosts central identity provider (Authentik SSO), primary reverse proxy (Nginx Proxy Manager), and SIEM threat intelligence.
 
-### 3. Proxmox Dapitan (`192.168.1.27`)
+### 3. Proxmox Dapitan (`VLAN 1 [Management]`)
 * **Hardware & Storage:** Dell OptiPlex 7050 SFF | Intel Core i5-7500 | 40 GiB RAM | 1TB NVMe `vm-fast` + 18TB Seagate IronWolf ZFS `bulk18`.
-* **Storage Shares:** Local Debian share & bind mounts at `/mnt/bindmounts/media-data`, `/mnt/bindmounts/immich-data`, and `/mnt/bindmounts/shared`.
-* **Role:** Bulk media and photo application node hosting Immich, Plex DP, Jellyfin DP, and Photoview.
+* **Storage Shares:** Local direct bind mounts at `/mnt/bindmounts/media-data`, `/mnt/bindmounts/immich-data`, `/mnt/bindmounts/floci-data`, and `/mnt/bindmounts/shared`.
+* **Role:** Bulk media, machine learning, and photo application node hosting Immich, Plex DP, Jellyfin DP, Guacamole, and PXE deployment services.
 
-### 4. Synology NAS (`192.168.1.12` / `192.168.1.13`)
+### 4. Synology NAS (`VLAN 1 [Management]`)
 * **Active Storage:** `PNAS` (23TB CIFS/SMB) serving as shared storage for VM backups, ISO templates, and shared application files.
 * **Backup Sync:** Synology `Seagate` shares are backed up across nodes using custom-scheduled Rsync transfers.
 
-### 4. Legacy Unraid Server (`192.168.1.24`) — ⚠️ CRASHED & DEPRECATED
-* **Status:** Retired. Following a complete hardware crash on **2026-05-13**, the Unraid server was taken offline permanently. All storage arrays and container applications have been migrated to the Proxmox **Cebu** and **Bulakan** hypervisors.
-
 ---
 
-## 🌐 Network Configuration & Security
+## 🌐 Network Segmentation & Security
 
-* **Gateway:** UniFi Cloud Gateway Max (`192.168.1.1`) managing internal segmentation.
+* **Gateway:** UniFi Cloud Gateway Max managing stateful firewall inspection and inter-VLAN routing rules.
 * **VLAN Layout:**
-  * **VLAN 1 (Management):** `192.168.1.0/24` — Dedicated to trusted admin interfaces, switches, and Proxmox hypervisor nodes.
-  * **VLAN 110 (Internal):** `192.168.42.0/24` — Internal homelab servers, media apps, and databases.
-  * **VLAN 2 (External):** `192.168.120.0/24` — DMZ segment for outward-facing reverse proxy interfaces.
-* **DNS Resolution:**
-  * **Primary DNS:** `192.168.1.5` (Pi-hole on Bulakan node, ad-blocking & local domain resolution)
-  * **Secondary DNS:** `192.168.1.134` (Pi-hole on Cebu node, fully mirrored redundancy)
-* **Access Control:**
-  * **Internal Reverse Proxy:** Dual Nginx Proxy Manager (NPM) hosts on Bulakan and Cebu (`192.168.1.210`) running SSL termination.
-  * **Identity Provider (IdP):** Centralized Single Sign-On (SSO) with **Authentik** (`https://auth.homelab-admin.me`), enforcing multi-factor authentication for sensitive administrative interfaces.
-  * **Remote Access:** Encrypted **Cloudflare Tunnels** (`cloudflared`) on both nodes providing external ingress without forwarding physical router ports. A fallback **WireGuard** VPN CT (`CT 101`) allows direct console routing.
+  * **VLAN 1 (Management):** Dedicated to trusted hypervisor hosts, switches, and core infrastructure management interfaces.
+  * **VLAN 10 (Security & SIEM):** Isolated security operations network hosting Wazuh SIEM and threat analysis engines.
+  * **VLAN 20 (Trusted Workstations):** Secure network for administrative jump boxes and daily workstations.
+  * **VLAN 110 (Internal Services):** Private application segment for media streaming, databases, identity providers, and background services.
+  * **VLAN 120 (DMZ / External Ingress):** Dedicated public ingress network for Nginx Proxy Manager and Cloudflare Tunnels (no inbound router ports required).
 
 ---
 
 ## 🔧 Master Service Catalog
 
-All containerized and virtualized services mapped by hypervisor node, VLAN segment, and functional category (live-verified across Proxmox cluster):
+All containerized and virtualized services mapped by hypervisor node, network segment, and functional role:
 
-| Category | Service Name | CT/VM ID | Host Node | VLAN / Subnet | IP Address | Status / Purpose |
+| Category | Service Name | ID | Host Node | Network / VLAN Segment | Port / Ingress | Architecture & Security Controls |
 |:---|:---|:---:|:---:|:---:|:---:|:---|
-| **Identity & SSO** | Authentik | CT 103 | Cebu | VLAN 110 (Internal) | `192.168.110.225` | 🟢 Central Identity Management & MFA |
-| **Reverse Proxy** | Nginx Proxy Manager (Primary) | CT 105 | Cebu | VLAN 120 (DMZ) | `192.168.120.211` | 🟢 Primary Reverse Proxy / SSL Ingress |
-| | Nginx Proxy Manager (Standby) | CT 102 | Bulakan | VLAN 120 (DMZ) | `192.168.120.212` | ⚪ Failover Reverse Proxy (Stopped) |
-| **Ingress Tunnels**| Cloudflared (Bulakan) | CT 304 | Bulakan | VLAN 120 (DMZ) | `192.168.120.7` | 🟢 Primary Cloudflare Ingress Tunnel |
-| | Cloudflared (Cebu) | CT 404 | Cebu | VLAN 120 (DMZ) | `192.168.120.6` | 🟢 Redundant Active Cloudflare Tunnel |
-| **Core DNS** | Pi-hole (Primary) | CT 301 | Bulakan | VLAN 1 (Mgmt) | `192.168.1.4` | 🟢 Primary DNS ad-blocker & local resolver |
-| | Pi-hole (Secondary) | CT 401 | Cebu | VLAN 1 (Mgmt) | `192.168.1.5` | 🟢 Secondary DNS failover resolver |
-| **Arr Stack** | Arr Stack Consolidated (Sonarr/Radarr/Prowlarr/Transmission/Jackett/Bazarr) | CT 417 | Cebu | VLAN 110 (Internal) | `192.168.110.42` | 🟢 Complete media acquisition stack with Surfshark WireGuard killswitch |
-| **Media Servers** | Plex Media Server (Primary) | CT 104 | Bulakan | VLAN 1 (Mgmt) | `192.168.1.54` | 🟢 Primary Media Server (Bulakan ZFS) |
-| | Plex Media Server (Dapitan) | CT 509 | Dapitan | VLAN 110 (Internal) | `192.168.110.44` | 🟢 Bulk Media Server (18TB ZFS mount) |
-| | Jellyfin (Primary) | CT 110 | Bulakan | VLAN 110 (Internal) | `192.168.110.41` | 🟢 Primary Jellyfin Media Server |
-| | Jellyfin (Cebu Standby) | CT 416 | Cebu | VLAN 110 (Internal) | `192.168.110.42` | 🟢 Failover Jellyfin instance |
-| | Jellyfin (Dapitan Standby) | CT 510 | Dapitan | VLAN 110 (Internal) | `192.168.110.43` | 🟢 Secondary Jellyfin instance |
-| | Audiobookshelf | CT 100 | Bulakan | VLAN 1 (Mgmt) | `192.168.1.59` | 🟢 Audiobook library & streaming server |
-| **Photo Vault** | Immich (Primary) | CT 504 | Dapitan | VLAN 110 (Internal) | `192.168.110.47` | 🟢 Primary photo/video vault (18TB ZFS) |
-| **Infrastructure & Tools** | Apache Guacamole | CT 114 | Dapitan | VLAN 110 (Internal) | `192.168.110.85` | 🟢 Clientless Remote Desktop Gateway |
-| | Floci Stack | CT 512 | Dapitan | VLAN 110 (Internal) | `192.168.110.49` | 🟢 Floci development services |
-| | UEFI PXE Boot Server | CT 513 | Dapitan | VLAN 110 (Internal) | `192.168.110.55` | 🟢 Network PXE OS Deployment Engine |
-| | BookOrbit | CT 514 | Dapitan | VLAN 110 (Internal) | `192.168.110.50` | 🟢 E-book & library sync |
-| | Calibre-Web | CT 113 | Bulakan | VLAN 1 (Mgmt) | `DHCP` | 🟢 Web e-book manager |
-| | Homepage Dashboard | CT 116 | Bulakan | VLAN 1 (Mgmt) | `DHCP` | 🟢 Central homelab service portal |
-| | Heimdall Dashboard | CT 115 | Bulakan | VLAN 1 (Mgmt) | `DHCP` | 🟢 Service bookmark dashboard |
-| **Security & SIEM** | Wazuh SIEM | VM 250 | Cebu | VLAN 10 (SecOps) | `192.168.10.250` | 🟢 Threat detection & log analysis |
-| **Workstations & Smart Home** | Linux Mint Remote Desktop | VM 505 | Dapitan | VLAN 20 (Trusted) | `DHCP` | 🟢 Management Jump Box (128GB disk) |
-| | Home Assistant OS (HAOS) | VM 111 | Dapitan | VLAN 1 (Mgmt) | `192.168.1.207` | 🟢 Smart Home Automation Controller |
-| | Bastion Jump Host | VM 203 | Bulakan | VLAN 1 (Mgmt) | `DHCP` | 🟢 Admin management bastion |
-| **Network Storage**| Synology NAS (PNAS) | Host | Synology | VLAN 1 (Mgmt) | `192.168.1.12` | 🟢 23TB CIFS/NFS Shared PVE & Media |
-| | Dapitan ZFS Bulk Storage | Host | Dapitan | VLAN 1 (Mgmt) | `192.168.1.27` | 🟢 18TB ZFS Local Dataset & Bind Mounts |
+| **Identity & SSO** | Authentik | CT 103 | Cebu | VLAN 110 (Services) | HTTPS / 443 | 🟢 Central SSO, MFA & OAuth2/OIDC Provider |
+| **Reverse Proxy** | Nginx Proxy Manager (Primary) | CT 105 | Cebu | VLAN 120 (DMZ) | HTTP: 80 / HTTPS: 443 | 🟢 Active Ingress Controller with Wildcard Let's Encrypt SSL |
+| | Nginx Proxy Manager (Standby) | CT 102 | Bulakan | VLAN 120 (DMZ) | HTTP: 80 / HTTPS: 443 | ⚪ Standby Cold Failover Proxy (Stopped) |
+| **Ingress Tunnels**| Cloudflared (Bulakan) | CT 304 | Bulakan | VLAN 120 (DMZ) | Encrypted Edge Tunnel | 🟢 Zero-Inbound Cloudflare Tunnel Ingress |
+| | Cloudflared (Cebu) | CT 404 | Cebu | VLAN 120 (DMZ) | Encrypted Edge Tunnel | 🟢 Redundant Active Zero-Inbound Tunnel |
+| **Core DNS** | Pi-hole (Primary) | CT 301 | Bulakan | VLAN 1 (Management) | DNS: 53 | 🟢 Primary DNS Ad-blocker & Split-Horizon Resolver |
+| | Pi-hole (Secondary) | CT 401 | Cebu | VLAN 1 (Management) | DNS: 53 | 🟢 Secondary Mirrored High-Availability DNS Resolver |
+| **Arr Stack** | Arr Stack (Sonarr/Radarr/Prowlarr/Transmission/Jackett/Bazarr) | CT 417 | Cebu | VLAN 110 (Services) | Web: 8989, 7878, 9696, 9091 | 🟢 Complete Acquisition Stack with Surfshark WireGuard Killswitch |
+| **Media Servers** | Plex Media Server (Primary) | CT 104 | Bulakan | VLAN 1 (Management) | Web: 32400 | 🟢 Intel 9th Gen QuickSync GPU & RAM Transcoding |
+| | Plex Media Server (Dapitan) | CT 509 | Dapitan | VLAN 110 (Services) | Web: 32400 | 🟢 Direct 18TB ZFS Storage Mount & GPU Acceleration |
+| | Jellyfin (Primary) | CT 110 | Bulakan | VLAN 110 (Services) | Web: 8096 | 🟢 Primary Jellyfin Instance with Intel GPU Passthrough |
+| | Jellyfin (Cebu Standby) | CT 416 | Cebu | VLAN 110 (Services) | Web: 8096 | 🟢 Cold Failover Jellyfin Container |
+| | Jellyfin (Dapitan Standby) | CT 510 | Dapitan | VLAN 110 (Services) | Web: 8096 | 🟢 Secondary Jellyfin Instance (18TB ZFS Direct) |
+| | Audiobookshelf | CT 100 | Bulakan | VLAN 1 (Management) | Web: 13378 | 🟢 Self-hosted Audiobook & Podcast Streaming |
+| **Photo Vault** | Immich (Primary) | CT 504 | Dapitan | VLAN 110 (Services) | Web: 2283 | 🟢 High-Performance Machine Learning Vault (18TB ZFS) |
+| **Infrastructure & Tools** | Apache Guacamole | CT 114 | Dapitan | VLAN 110 (Services) | Web: 8080 | 🟢 Clientless HTML5 Remote Desktop Gateway (RDP/VNC/SSH) |
+| | Floci Stack | CT 512 | Dapitan | VLAN 110 (Services) | Ports: 4566, 4577, 4588 | 🟢 Multi-Cloud Emulation & Local Sandbox |
+| | UEFI PXE Boot Server | CT 513 | Dapitan | VLAN 110 (Services) | TFTP / HTTP: 80 | 🟢 Automated OS Network Deployment Engine |
+| | BookOrbit | CT 514 | Dapitan | VLAN 110 (Services) | Web: 3000 | 🟢 Modern E-book Library & Reader |
+| | Calibre-Web | CT 113 | Bulakan | VLAN 1 (Management) | Web: 8083 | 🟢 E-book Organization & Synology Mount |
+| | Homepage Dashboard | CT 116 | Bulakan | VLAN 1 (Management) | Web: 3000 | 🟢 Unified Modern Service Status Portal |
+| | Heimdall Dashboard | CT 115 | Bulakan | VLAN 1 (Management) | Web: 80 | 🟢 Application Quick-Access Launchpad |
+| **Security & SIEM** | Wazuh SIEM | VM 250 | Cebu | VLAN 10 (SecOps) | Agent: 1514 / Web: 443 | 🟢 Real-time Threat Detection, File Integrity & SIEM |
+| **Workstations & Smart Home** | Linux Mint Remote Desktop | VM 505 | Dapitan | VLAN 20 (Trusted) | CRD / RDP | 🟢 Isolated Jump Box (128GB NVMe Fast Storage) |
+| | Home Assistant OS (HAOS) | VM 111 | Dapitan | VLAN 1 (Management) | Web: 8123 | 🟢 Smart Home Automation Controller |
+| | Bastion Jump Host | VM 203 | Bulakan | VLAN 1 (Management) | SSH: 22 | 🟢 Administrative SSH Management Bastion |
+| **Network Storage**| Synology NAS (PNAS) | Host | Synology | VLAN 1 (Management) | SMB / NFS | 🟢 23TB High-Availability CIFS/NFS Shared Cluster Pool |
+| | Dapitan ZFS Bulk Storage | Host | Dapitan | VLAN 1 (Management) | ZFS Datasets | 🟢 18TB IronWolf Direct-Attached Storage Pool |
 
 ---
 

@@ -2,7 +2,7 @@
 
 > **Date:** 2026-08-14  
 > **Objective:** Comprehensive beginner guide for navigating, understanding, and managing Wazuh SIEM & XDR in the `Homelab-Net` homelab.  
-> **Dashboard URL:** `https://192.168.10.250` (**VLAN 10 MGMT**)  
+> **Dashboard URL:** `https://VLAN 10 (SecOps)` (**VLAN 10 MGMT**)  
 > **Admin Username:** `admin`  
 > **Admin Password:** `WazuhAdmin2026-`  
 > **Target Audience:** Homelab Administrator / Beginners  
@@ -37,7 +37,7 @@ graph TD
 
 ## 2. First-Time Dashboard Login & Navigation
 
-1. Open your browser and navigate to **`https://192.168.10.250`** *(Accept the self-signed TLS certificate warning)*.
+1. Open your browser and navigate to **`https://VLAN 10 (SecOps)`** *(Accept the self-signed TLS certificate warning)*.
 2. Log in with your admin credentials:
    - **Username**: `admin`
    - **Password**: `WazuhAdmin2026-`
@@ -97,7 +97,7 @@ To monitor another machine (e.g., node `Bulakan`, `Dapitan`, or a Linux VM):
 ### Option A: Via Wazuh Web Dashboard (Easiest)
 1. In the Wazuh Dashboard, click **Agents** → **Deploy New Agent**.
 2. Select your OS: **Debian / Ubuntu / Windows / macOS**.
-3. Enter the Manager IP: **`192.168.10.250`**.
+3. Enter the Manager IP: **`VLAN 10 (SecOps)`**.
 4. Assign an Agent Name (e.g., `bulakan` or `dapitan`).
 5. Copy the generated one-line command and run it in the target machine's terminal.
 
@@ -110,10 +110,10 @@ echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4
 apt-get update
 
 # 2. Install Wazuh Agent (Version 4.11.2)
-WAZUH_MANAGER="192.168.10.250" apt-get install -y wazuh-agent=4.11.2-1
+WAZUH_MANAGER="VLAN 10 (SecOps)" apt-get install -y wazuh-agent=4.11.2-1
 
 # 3. Register Agent with Manager
-/var/ossec/bin/agent-auth -m 192.168.10.250
+/var/ossec/bin/agent-auth -m VLAN 10 (SecOps)
 
 # 4. Start & Enable Agent Service
 systemctl enable --now wazuh-agent
@@ -123,9 +123,9 @@ systemctl enable --now wazuh-agent
 
 ## 5. Essential Management & Troubleshooting CLI Commands
 
-All commands below are executed via SSH on the **Wazuh Server VM (`192.168.10.250`)** or target agent node:
+All commands below are executed via SSH on the **Wazuh Server VM (`VLAN 10 (SecOps)`)** or target agent node:
 
-### On Wazuh Server (`192.168.10.250`):
+### On Wazuh Server (`VLAN 10 (SecOps)`):
 
 ```bash
 # List all registered agents and their current connection state
@@ -143,7 +143,7 @@ systemctl restart wazuh-indexer
 systemctl restart wazuh-dashboard
 ```
 
-### On Agent Nodes (e.g., `Cebu` `192.168.1.26`):
+### On Agent Nodes (e.g., `Cebu` `VLAN 1 [MGMT]`):
 
 ```bash
 # Check agent service status
@@ -162,7 +162,7 @@ systemctl restart wazuh-agent
 
 1. **Active Response Caution**: Keep Active Response **disabled on hypervisor hosts** (`Bulakan`, `Cebu`, `Dapitan`). You do not want automated firewall block scripts disconnecting Proxmox cluster nodes during routine administrative tasks.
 2. **Log Retention Management**: To keep the `cebu-zfs` storage pool healthy, Wazuh is configured to retain indices for **14 days**. Do not disable automated index deletion policies without checking available disk space.
-3. **UniFi Gateway Integration**: Forward UniFi UCG Max logs by going to UniFi OS → **Settings → System → Advanced → Syslog** → Remote Server IP: **`192.168.10.250:514`** (UDP).
+3. **UniFi Gateway Integration**: Forward UniFi UCG Max logs by going to UniFi OS → **Settings → System → Advanced → Syslog** → Remote Server IP: **`VLAN 10 (SecOps):514`** (UDP).
 
 ---
 

@@ -3,7 +3,7 @@
 - **Date:** May 18, 2026
 - **Objective:** Document the deployment and hardware-accelerated configuration of the high-performance Debian 13 Immich LXC (Container 112) on the secondary Proxmox node `Cebu`, and integrate it into the homelab's High Availability (HA) failover design.
 - **Status:** Active / Secondary Standby & Migration Target
-- **Access URL:** `http://192.168.1.189:2283`
+- **Access URL:** `http://VLAN 1 (Mgmt):2283`
 
 ---
 
@@ -13,7 +13,7 @@ The container was provisioned using the community-maintained Proxmox helper scri
 
 | Parameter | Specification | Rationale |
 | :--- | :--- | :--- |
-| **Host Node** | `Cebu` (192.168.1.26) | Offloads heavy computation from Bulakan; utilizes local resources. |
+| **Host Node** | `Cebu` (VLAN 1 [MGMT]) | Offloads heavy computation from Bulakan; utilizes local resources. |
 | **Container ID** | `112` | Structured ID indexing. |
 | **LXC Type** | Unprivileged | Security best practice; isolates container root from host kernel. |
 | **Operating System** | Debian 13 (Trixie/Testing) | Cutting-edge libraries required for compiled photo-processing dependencies. |
@@ -59,8 +59,8 @@ With Immich now running as **VM 204 on Bulakan** AND **LXC 112 on Cebu**, you ha
 ```mermaid
 graph TD
     subgraph Traffic Ingress
-        NPM[Nginx Proxy Manager <br> 192.168.1.210] -->|Primary Proxy Path| VM[Bulakan VM 204 <br> 192.168.1.154]
-        NPM -.->|Standby Proxy Path| LXC[Cebu LXC 112 <br> 192.168.1.189]
+        NPM[Nginx Proxy Manager <br> VLAN 1 (Mgmt)] -->|Primary Proxy Path| VM[Bulakan VM 204 <br> VLAN 1 (Mgmt)]
+        NPM -.->|Standby Proxy Path| LXC[Cebu LXC 112 <br> VLAN 1 (Mgmt)]
     end
 
     subgraph Centralized Storage
@@ -83,14 +83,14 @@ graph TD
 ### Pathway A: Active-Standby Sync (LXC 112 as Cebu Failover)
 Keep **VM 204 (Bulakan)** as your primary production instance, and use **LXC 112 (Cebu)** as a hot-standby replication target.
 
-1. **Mount Shared Photos:** Mount the centralized TrueNAS share (`\\192.168.1.211\photo\Immich`) inside LXC 112 at `/usr/src/app/upload`.
+1. **Mount Shared Photos:** Mount the centralized TrueNAS share (`\\VLAN 1 (Mgmt)\photo\Immich`) inside LXC 112 at `/usr/src/app/upload`.
 2. **Replicate Database:** Set up a cron task to perform a scheduled `pg_dump` of the Postgres database inside VM 204, transfer the SQL file, and import it into LXC 112's Postgres instance.
-3. **Failover Action:** If Bulakan crashes, Nginx Proxy Manager changes its backend routing from `192.168.1.154` to `192.168.1.189`, resulting in an instant standby recovery with zero downtime of the physical files.
+3. **Failover Action:** If Bulakan crashes, Nginx Proxy Manager changes its backend routing from `VLAN 1 (Mgmt)` to `VLAN 1 (Mgmt)`, resulting in an instant standby recovery with zero downtime of the physical files.
 
 ### Pathway B: Permanent Migration to LXC (LXC 112 as Primary) 🌟 (Highly Recommended)
 Because LXC 112 is a native container (Debian 13), it has **Intel GPU Passthrough** enabled and consumes **only 6GB of RAM** (instead of VM 204's heavy 12GB footprint). Migrating your primary server to LXC 112 will make your Immich experience faster, and save massive host resources:
 
-1. **Mount Central Share:** Mount `\\192.168.1.211\photo\Immich` inside LXC 112.
+1. **Mount Central Share:** Mount `\\VLAN 1 (Mgmt)\photo\Immich` inside LXC 112.
 2. **Restore Postgres:** Migrate VM 204's Postgres database to LXC 112 one time.
 3. **Decommission VM 204:** Safely turn off VM 204, freeing up **12GB of RAM** and **600GB of disk space** on Bulakan-ZFS.
 4. **Create a Bulakan Standby:** Spin up a tiny, empty standby LXC on Bulakan to act as your failover.
@@ -103,7 +103,7 @@ This playbook documents the exact cluster-verified commands executed to successf
 
 ### Phase 1: VM Storage Inspection & Safe Read-Only Mount
 To copy data from the running `Immich-UbuntuLTS` VM (`204`) without shutting down services or causing write-locks:
-1. SSH into the **Bulakan Host** (`192.168.1.25`).
+1. SSH into the **Bulakan Host** (`VLAN 1 [MGMT]`).
 2. Run `fdisk` to inspect the VM's ZFS volume partitions:
    ```bash
    fdisk -l /dev/zvol/Bulakan-ZFS/vm-204-disk-0
@@ -118,7 +118,7 @@ To copy data from the running `Immich-UbuntuLTS` VM (`204`) without shutting dow
 Copy the target Daily Database Dump over the cluster network:
 1. From the Bulakan host, copy the gzipped SQL file to Cebu host's `/tmp`:
    ```bash
-   scp /mnt/immich-vm-temp/home/homelab-admin/immich-app/mnt/immich-nas/backups/immich-db-backup-20260519T020000-v2.7.5-pg14.19.sql.gz root@192.168.1.26:/tmp/
+   scp /mnt/immich-vm-temp/home/homelab-admin/immich-app/mnt/immich-nas/backups/immich-db-backup-20260519T020000-v2.7.5-pg14.19.sql.gz root@VLAN 1 [MGMT]:/tmp/
    ```
 
 ### Phase 3: PostgreSQL Database Restore (Cebu LXC 112)
@@ -127,7 +127,7 @@ Import the database dump into PostgreSQL 16 on the new Debian 13 LXC container:
    ```bash
    pct push 112 /tmp/immich-db-backup-20260519T020000-v2.7.5-pg14.19.sql.gz /tmp/immich-db-backup-20260519T020000-v2.7.5-pg14.19.sql.gz
    ```
-2. Shell into the container (`pct enter 112` or SSH into `192.168.1.189`), and run:
+2. Shell into the container (`pct enter 112` or SSH into `VLAN 1 (Mgmt)`), and run:
    ```bash
    # Decompress the SQL backup file
    gunzip /tmp/immich-db-backup-20260519T020000-v2.7.5-pg14.19.sql.gz
@@ -148,14 +148,14 @@ Import the database dump into PostgreSQL 16 on the new Debian 13 LXC container:
 
 ### Phase 4: TrueNAS SMB Mounting & Container Mapping
 Mount the parent TrueNAS SCALE photo share permanently on the Cebu Host and map both the upload vault and external libraries to Container 112:
-1. SSH into the **Cebu Host** (`192.168.1.26`).
+1. SSH into the **Cebu Host** (`VLAN 1 [MGMT]`).
 2. Create the parent mount directory:
    ```bash
    mkdir -p /mnt/truenas-photo
    ```
 3. Append the permanent CIFS mount mapping for the parent `photo` directory to `/etc/fstab`:
    ```text
-   //192.168.1.211/photo /mnt/truenas-photo cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100999,gid=100991,file_mode=0777,dir_mode=0777,nofail 0 0
+   //VLAN 1 (Mgmt)/photo /mnt/truenas-photo cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100999,gid=100991,file_mode=0777,dir_mode=0777,nofail 0 0
    ```
    *Note:* `uid=100999` and `gid=100991` correspond exactly to Container 112's unprivileged `immich` user, allowing perfect read/write access.
 4. Mount the parent share:
@@ -180,7 +180,7 @@ Mount the parent TrueNAS SCALE photo share permanently on the Cebu Host and map 
    ```bash
    nohup rsync -av --ignore-errors \
      /mnt/immich-vm-temp/home/homelab-admin/immich-app/mnt/immich-nas/ \
-     root@192.168.1.26:/mnt/truenas-photo/Immich/ \
+     root@VLAN 1 [MGMT]:/mnt/truenas-photo/Immich/ \
      > /var/log/immich_migration.log 2>&1 &
    ```
 2. Monitor progress:
@@ -204,13 +204,13 @@ Mount the parent TrueNAS SCALE photo share permanently on the Cebu Host and map 
 
 ## 🔄 Active Storage Migration & External Libraries - May 19, 2026
 
-The Cebu Immich LXC container is permanently configured to utilize a **single parent TrueNAS SCALE photo share (`//192.168.1.211/photo`)** to handle both main uploads and external photo libraries safely and efficiently.
+The Cebu Immich LXC container is permanently configured to utilize a **single parent TrueNAS SCALE photo share (`//VLAN 1 (Mgmt)/photo`)** to handle both main uploads and external photo libraries safely and efficiently.
 
 ### 1. Storage Mount Configuration (Cebu Host & LXC 112)
 * **Cebu Host Mount Path:** `/mnt/truenas-photo`
 * **Cebu Host `/etc/fstab` entry:**
   ```text
-  //192.168.1.211/photo /mnt/truenas-photo cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100999,gid=100991,file_mode=0777,dir_mode=0777,nofail 0 0
+  //VLAN 1 (Mgmt)/photo /mnt/truenas-photo cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100999,gid=100991,file_mode=0777,dir_mode=0777,nofail 0 0
   ```
 * **LXC Container Bind-Mounts:**
   ```bash
@@ -234,7 +234,7 @@ A background `rsync` script runs on the Bulakan host, copying the 600GB library 
 ```bash
 nohup rsync -av --ignore-errors \
   /mnt/immich-vm-temp/home/homelab-admin/immich-app/mnt/immich-nas/ \
-  root@192.168.1.26:/mnt/truenas-photo/Immich/ \
+  root@VLAN 1 [MGMT]:/mnt/truenas-photo/Immich/ \
   > /var/log/immich_migration.log 2>&1 &
 ```
 * **Security:** The source disk is mounted **read-only** (`-o ro`), protecting it from all modifications while VM 204 remains online.

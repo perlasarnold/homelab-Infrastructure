@@ -3,7 +3,7 @@
 - **Date:** May 16, 2026
 - **Objective:** Establish a resilient, highly available failover strategy for the Immich photo management server (VM 204) across the 2-node Proxmox cluster (`Bulakan` & `Cebu`), while offloading massive storage to external shares to rescue `Bulakan-ZFS` from its **86% capacity limit**.
 - **Status:** Proposed / Architectural Blueprint
-- **Target Node Failover:** Proxmox Bulakan (`192.168.1.25`) ➡️ Proxmox Cebu (`192.168.1.26`)
+- **Target Node Failover:** Proxmox Bulakan (`VLAN 1 [MGMT]`) ➡️ Proxmox Cebu (`VLAN 1 [MGMT]`)
 
 ---
 
@@ -31,7 +31,7 @@ We analyzed two primary pathways to achieve High Availability for your Immich se
 ```mermaid
 graph TD
     subgraph Client Traffic Ingress
-        A[Nginx Proxy Manager <br> Bulakan/Cebu - 192.168.1.210] -->|Reverse Proxy / SSL| B[Immich VM 204]
+        A[Nginx Proxy Manager <br> Bulakan/Cebu - VLAN 1 (Mgmt)] -->|Reverse Proxy / SSL| B[Immich VM 204]
     end
 
     subgraph Primary Node: BULAKAN
@@ -54,7 +54,7 @@ graph TD
 Instead of trying to cluster the Immich application itself (which is complex and unsupported officially for active-active homelab write operations), we leverage **Proxmox VE's native High Availability (HA) Manager** with a hybrid storage model.
 
 * **Database & OS:** Remain on the local ZFS SSD pool (`Bulakan-ZFS`) for blazing-fast indexing and facial recognition. The virtual disk size is shunk from **600GB to ~40GB**.
-* **Photos & Videos:** Mounted inside the VM via **SMB/CIFS** directly from your centralized **TrueNAS SCALE photo share (`\\TRUENAS\photo\Immich\`)** hosted at `192.168.1.211`.
+* **Photos & Videos:** Mounted inside the VM via **SMB/CIFS** directly from your centralized **TrueNAS SCALE photo share (`\\TRUENAS\photo\Immich\`)** hosted at `VLAN 1 (Mgmt)`.
 * **Replication:** Proxmox automated ZFS replication (`pvesr`) syncs the small 40GB VM disk from Bulakan to Cebu (`cebu-zfs`) every 5 to 15 minutes.
 * **Pros:** 
   - Frees up **~550GB** of SSD space on Bulakan instantly.
@@ -80,12 +80,12 @@ In this model, you run two concurrent Immich instances: Instance A on Bulakan an
 Before we can enable replication or failover, we must shrink the VM's footprint by moving the photos directly to your centralized TrueNAS SMB share at **`\\TRUENAS\photo\Immich\`**.
 
 1. **Prepare the Network Share**:
-   - Log into **TrueNAS SCALE** (`192.168.1.211`).
+   - Log into **TrueNAS SCALE** (`VLAN 1 (Mgmt)`).
    - Inside your `photo` dataset, create an `Immich` folder (resulting in `\\TRUENAS\photo\Immich\`).
    - Create a dedicated TrueNAS system service user (e.g., `immich-svc`) or use your existing credentials that have Full Read/Write access to the `photo` share.
 
 2. **Mount the SMB Share inside VM 204 securely**:
-   - SSH into `Immich-UbuntuLTS` (`192.168.1.154`).
+   - SSH into `Immich-UbuntuLTS` (`VLAN 1 (Mgmt)`).
    - Stop your active Immich containers:
      ```bash
      cd /path/to/immich/docker
@@ -113,7 +113,7 @@ Before we can enable replication or failover, we must shrink the VM's footprint 
    - Create a temporary mount point to transfer existing photo data:
      ```bash
      sudo mkdir -p /mnt/immich-truenas-temp
-     sudo mount -t cifs -o credentials=/etc/immich-truenas-credentials,iocharset=utf8,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 //192.168.1.211/photo/Immich /mnt/immich-truenas-temp
+     sudo mount -t cifs -o credentials=/etc/immich-truenas-credentials,iocharset=utf8,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 //VLAN 1 (Mgmt)/photo/Immich /mnt/immich-truenas-temp
      ```
 
 3. **Migrate the Photo Assets**:
@@ -130,7 +130,7 @@ Before we can enable replication or failover, we must shrink the VM's footprint 
      ```
      *Append the following line at the end of the file:*
      ```text
-     //192.168.1.211/photo/Immich /data/immich/upload cifs credentials=/etc/immich-truenas-credentials,iocharset=utf8,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail,soft,bg 0 0
+     //VLAN 1 (Mgmt)/photo/Immich /data/immich/upload cifs credentials=/etc/immich-truenas-credentials,iocharset=utf8,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail,soft,bg 0 0
      ```
    - Unmount the temporary share and mount the new permanent upload path:
      ```bash
@@ -254,7 +254,7 @@ Before you make any changes to your active production Immich instance (VM 204), 
      ```bash
      sudo apt update && sudo apt install cifs-utils -y
      sudo mkdir -p /mnt/immich-test
-     sudo mount -t cifs -o username=immich-svc,password=TEST_PASSWORD,iocharset=utf8,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 //192.168.1.211/photo/Immich_Staging_Test /mnt/immich-test
+     sudo mount -t cifs -o username=immich-svc,password=TEST_PASSWORD,iocharset=utf8,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 //VLAN 1 (Mgmt)/photo/Immich_Staging_Test /mnt/immich-test
      ```
   4. Run a tiny test Docker Compose stack (even just a simple busybox write container or a fresh Immich trial) pointing to `/mnt/immich-test`.
   5. **Validation:** Verify you can write, edit, and delete files from the container. Check that the GIDs/UIDs and write parameters on the TrueNAS SMB share map correctly without permission errors.

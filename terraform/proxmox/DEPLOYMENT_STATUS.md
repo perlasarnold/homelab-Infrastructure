@@ -20,7 +20,7 @@ You need to download the LXC template to your Proxmox node. Choose **one** metho
 
 #### Option A: Proxmox Web UI (Easiest)
 
-1. Open https://192.168.1.25:8006
+1. Open https://VLAN 1 [MGMT]:8006
 2. Navigate to **local (Storage)** → **CT Templates**
 3. Click **Templates** button
 4. Find and download: `debian-12-standard`
@@ -30,7 +30,7 @@ You need to download the LXC template to your Proxmox node. Choose **one** metho
 
 ```bash
 # SSH into Proxmox
-ssh root@192.168.1.25
+ssh root@VLAN 1 [MGMT]
 
 # Update template list
 pveam update
@@ -49,7 +49,7 @@ ls -la /var/lib/vz/template/cache/
 
 ```powershell
 # Run the helper script I created
-.\Download-LXCTemplate.ps1 -ProxmoxHost 192.168.1.25
+.\Download-LXCTemplate.ps1 -ProxmoxHost VLAN 1 [MGMT]
 ```
 
 ### Step 2: Update Template Name (if needed)
@@ -89,7 +89,7 @@ terraform apply -target="proxmox_virtual_environment_container.netbootxyz"
 |----------|-------|
 | **VM ID** | 118 |
 | **Name** | netbootxyz |
-| **IP** | 192.168.1.54/24 (static) |
+| **IP** | VLAN 1 (Mgmt)/24 (static) |
 | **Template** | debian-12-standard |
 | **CPU** | 2 cores |
 | **RAM** | 1024 MB |
@@ -104,7 +104,7 @@ terraform apply -target="proxmox_virtual_environment_container.netbootxyz"
 
 1. Container created → Install netboot.xyz software
 2. Configure DHCP options for PXE boot
-3. Access Web UI at http://192.168.1.54:3000
+3. Access Web UI at http://VLAN 1 (Mgmt):3000
 
 See full documentation: `../../05-Services/Netbootxyz.md`
 
@@ -138,7 +138,7 @@ If you see this error again, it means the API token doesn't have permission to c
 Verify the exact template name:
 
 ```bash
-ssh root@192.168.1.25
+ssh root@VLAN 1 [MGMT]
 ls -la /var/lib/vz/template/cache/
 ```
 

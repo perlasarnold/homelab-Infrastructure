@@ -1,6 +1,6 @@
 ###############################################################################
 # Unraid Docker Configuration
-# Host: Mercado (192.168.1.24) · Unraid 7.2.4
+# Host: Mercado (VLAN 1 (Mgmt)) · Unraid 7.2.4
 # Provider: kreuzwerker/docker
 #
 # PREREQUISITE — Enable Docker TCP API on Unraid:
@@ -8,7 +8,7 @@
 #   Then add this to /etc/docker/daemon.json (via User Scripts):
 #     { "hosts": ["unix:///var/run/docker.sock", "tcp://0.0.0.0:2375"] }
 #   OR use SSH tunnel instead (safer):
-#     ssh -L 2375:/var/run/docker.sock root@192.168.1.24 -N
+#     ssh -L 2375:/var/run/docker.sock root@VLAN 1 (Mgmt) -N
 #     Then set docker_host = "tcp://localhost:2375"
 ###############################################################################
 

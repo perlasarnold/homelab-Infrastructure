@@ -5,7 +5,7 @@
 variable "unraid_ip" {
   description = "IP address of the Unraid server"
   type        = string
-  default     = "192.168.1.24"
+  default     = "VLAN 1 (Mgmt)"
 }
 
 variable "docker_port" {

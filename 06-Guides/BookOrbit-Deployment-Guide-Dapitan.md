@@ -1,7 +1,7 @@
 # BookOrbit Deployment & Configuration Guide (Dapitan)
 
 **Date:** August 22, 2026  
-**Objective:** Deploy BookOrbit on Proxmox node **Dapitan** (`192.168.1.27`), mount the Synology NAS ebook library `\\pnas\Media\Ebooks` persistently, configure SERVICES VLAN 110 segmentation, establish LAN DNS & SSL reverse proxy routing on `bookorbit.homelab-admin.me`, and configure the default administrator credentials.
+**Objective:** Deploy BookOrbit on Proxmox node **Dapitan** (`VLAN 1 [MGMT]`), mount the Synology NAS ebook library `\\pnas\Media\Ebooks` persistently, configure SERVICES VLAN 110 segmentation, establish LAN DNS & SSL reverse proxy routing on `bookorbit.homelab-admin.me`, and configure the default administrator credentials.
 
 ---
 
@@ -9,15 +9,15 @@
 
 | Layer | Component / Location | Specification / Detail |
 |:---|:---|:---|
-| **Hypervisor Node** | Dapitan | Dell OptiPlex 7050 SFF (`192.168.1.27`) |
+| **Hypervisor Node** | Dapitan | Dell OptiPlex 7050 SFF (`VLAN 1 [MGMT]`) |
 | **Container Platform** | LXC CT 514 (`bookorbit-dapitan`) | Ubuntu 24.04 LTS, 2 vCPUs, 2048 MB RAM, 16 GB SSD (`vm-fast`) |
-| **Network & VLAN** | **SERVICES VLAN 110** | IP: `192.168.110.50/24`, Gateway: `192.168.110.1`, DNS: `192.168.1.5` |
-| **Storage Source** | Synology PNAS SMB | `//192.168.1.12/Media/Ebooks` (`\\pnas\Media\Ebooks`) |
+| **Network & VLAN** | **SERVICES VLAN 110** | IP: `VLAN 110 (Services)/24`, Gateway: `VLAN 110 (Services)`, DNS: `VLAN 1 [DNS-Secondary]` |
+| **Storage Source** | Synology PNAS SMB | `//VLAN 1 [MGMT-NAS]/Media/Ebooks` (`\\pnas\Media\Ebooks`) |
 | **Host Mount Point** | Dapitan Host | `/mnt/bindmounts/ebooks` via CIFS (`/root/.pnascredentials`) |
 | **Container Mount** | CT 514 Bind Mount | `mp0: /mnt/bindmounts/ebooks,mp=/mnt/ebooks` (Container `/books:ro`) |
 | **Database** | PostgreSQL + pgvector | `pgvector/pgvector:pg18` (`/opt/bookorbit/data/postgres`) |
-| **Reverse Proxy** | Nginx Proxy Manager (Cebu CT 105) | `192.168.120.211` $\rightarrow$ `http://192.168.110.50:3000` |
-| **LAN DNS** | Pi-hole (`192.168.1.5`) | `bookorbit.homelab-admin.me` $\rightarrow$ `192.168.120.211` |
+| **Reverse Proxy** | Nginx Proxy Manager (Cebu CT 105) | `VLAN 120 (DMZ)` $\rightarrow$ `http://VLAN 110 (Services):3000` |
+| **LAN DNS** | Pi-hole (`VLAN 1 [DNS-Secondary]`) | `bookorbit.homelab-admin.me` $\rightarrow$ `VLAN 120 (DMZ)` |
 | **SSL / TLS** | Wildcard Certificate | `*.homelab-admin.me` (Cloudflare DNS-01 API) |
 | **Default Admin** | Setup Onboarding | User: `homelab-admin` (or `homelab-admin@homelab-admin.me`) |
 
@@ -25,10 +25,10 @@
 
 ## 🌐 Network & VLAN Rationale
 
-BookOrbit is classified as an **internal application & media service**, operating alongside Plex (`192.168.110.44`), Jellyfin (`192.168.110.43`), Immich (`192.168.110.47`), and Photoview (`192.168.110.48`).
+BookOrbit is classified as an **internal application & media service**, operating alongside Plex (`VLAN 110 (Services)`), Jellyfin (`VLAN 110 (Services)`), Immich (`VLAN 110 (Services)`), and Photoview (`VLAN 110 (Services)`).
 
 1. **Isolation**: Placing BookOrbit in **SERVICES VLAN 110** isolates it from hypervisor management interfaces (VLAN 10) and IoT peripherals (VLAN 30).
-2. **Access Control**: UniFi firewall rules permit incoming traffic to port 3000 exclusively from the Nginx Proxy Manager reverse proxy on **DMZ VLAN 120** (`192.168.120.211`) and trusted admin clients on **TRUSTED VLAN 20**.
+2. **Access Control**: UniFi firewall rules permit incoming traffic to port 3000 exclusively from the Nginx Proxy Manager reverse proxy on **DMZ VLAN 120** (`VLAN 120 (DMZ)`) and trusted admin clients on **TRUSTED VLAN 20**.
 3. **Storage Access**: Inter-VLAN rules allow SERVICES VLAN 110 to communicate with Synology NAS storage over CIFS/SMB (Port 445).
 
 ---
@@ -44,7 +44,7 @@ BookOrbit is classified as an **internal application & media service**, operatin
 2. Verify that `/root/.pnascredentials` exists with Synology NAS credentials (`username=` and `password=`).
 3. Add the persistent mount entry to `/etc/fstab` on Dapitan:
    ```fstab
-   //192.168.1.12/Media/Ebooks /mnt/bindmounts/ebooks cifs credentials=/root/.pnascredentials,iocharset=utf8,vers=3.0,uid=0,gid=0,file_mode=0775,dir_mode=0775,noperm,nobrl,_netdev,nofail,x-systemd.automount 0 0
+   //VLAN 1 [MGMT-NAS]/Media/Ebooks /mnt/bindmounts/ebooks cifs credentials=/root/.pnascredentials,iocharset=utf8,vers=3.0,uid=0,gid=0,file_mode=0775,dir_mode=0775,noperm,nobrl,_netdev,nofail,x-systemd.automount 0 0
    ```
    *Rationale for mount options:*
    - `_netdev`, `nofail`, and `x-systemd.automount` ensure systemd handles boot ordering gracefully without blocking host boot if the NAS is temporarily unreachable.
@@ -67,8 +67,8 @@ BookOrbit is classified as an **internal application & media service**, operatin
        --swap 1024 \
        --cores 2 \
        --rootfs vm-fast:16 \
-       --net0 name=eth0,bridge=vmbr0,tag=110,ip=192.168.110.50/24,gw=192.168.110.1,type=veth \
-       --nameserver 192.168.1.5 \
+       --net0 name=eth0,bridge=vmbr0,tag=110,ip=VLAN 110 (Services)/24,gw=VLAN 110 (Services),type=veth \
+       --nameserver VLAN 1 [DNS-Secondary] \
        --features nesting=1,keyctl=1 \
        --unprivileged 0 \
        --onboot 1
@@ -190,11 +190,11 @@ BookOrbit is classified as an **internal application & media service**, operatin
 
 ### Step 5: Configure Reverse Proxy (Nginx Proxy Manager on Cebu CT 105)
 
-1. Open NPM Admin Dashboard: `http://192.168.120.211:81`
+1. Open NPM Admin Dashboard: `http://VLAN 120 (DMZ):81`
 2. Navigate to **Hosts > Proxy Hosts > Add Proxy Host**:
    - **Domain Names:** `bookorbit.homelab-admin.me`
    - **Scheme:** `http`
-   - **Forward Hostname / IP:** `192.168.110.50`
+   - **Forward Hostname / IP:** `VLAN 110 (Services)`
    - **Forward Port:** `3000`
    - **Cache Assets:** `Disabled`
    - **Block Common Exploits:** `Enabled`
@@ -209,11 +209,11 @@ BookOrbit is classified as an **internal application & media service**, operatin
 
 ### Step 6: Configure LAN DNS (Pi-hole)
 
-1. Open Pi-hole Admin Web Console (`http://192.168.1.5/admin`).
+1. Open Pi-hole Admin Web Console (`http://VLAN 1 [DNS-Secondary]/admin`).
 2. Navigate to **Local DNS > DNS Records**.
 3. Add:
    - **Domain:** `bookorbit.homelab-admin.me`
-   - **IP Address:** `192.168.120.211` (Nginx Proxy Manager on Cebu)
+   - **IP Address:** `VLAN 120 (DMZ)` (Nginx Proxy Manager on Cebu)
 4. *Result:* Internal clients navigating to `https://bookorbit.homelab-admin.me` route through NPM with valid wildcard TLS encryption.
 
 ### Step 7: Initial Admin Account Onboarding

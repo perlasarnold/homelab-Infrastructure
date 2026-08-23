@@ -2,7 +2,7 @@
 
 > **Date:** 2026-08-14  
 > **Objective:** Translate production-ready Let's Encrypt & Nginx configuration principles (from [esc.sh Let's Encrypt Nginx Definitive Guide](https://blog.esc.sh/letsencrypt-nginx-definitive-guide/)) into actionable, step-by-step procedures for an **Nginx Proxy Manager (NPM)** container / LXC setup.  
-> **Target Environment:** Proxmox VE (`Bulakan` - `192.168.1.210`), NPM Container / LXC  
+> **Target Environment:** Proxmox VE (`Bulakan` - `VLAN 1 (Mgmt)`), NPM Container / LXC  
 > **Admin GUI Port:** `81` | **HTTP/HTTPS Ports:** `80` / `443`  
 > **Status:** Active / Production Guide  
 
@@ -39,7 +39,7 @@ nslookup example.com
 ```
 
 > [!IMPORTANT]
-> **HTTP-01 Challenge Requirement**: If using the standard HTTP-01 challenge, port `80` must be publicly accessible and routed to NPM (`192.168.1.210:80`).  
+> **HTTP-01 Challenge Requirement**: If using the standard HTTP-01 challenge, port `80` must be publicly accessible and routed to NPM (`VLAN 1 (Mgmt):80`).  
 > **DNS-01 Challenge (No Open Ports)**: If ports 80/443 are closed (e.g., behind Cloudflare Tunnels or CGNAT), use the **DNS-01 Challenge** described in Section 6.
 
 ---
@@ -48,12 +48,12 @@ nslookup example.com
 
 ### Step 1: Create the Proxy Host & Fetch Certificate (HTTP-01)
 
-1. Log into the NPM Admin Console at `http://192.168.1.210:81`.
+1. Log into the NPM Admin Console at `http://VLAN 1 (Mgmt):81`.
 2. Navigate to **Hosts** $\rightarrow$ **Proxy Hosts** $\rightarrow$ Click **Add Proxy Host**.
 3. **Details Tab**:
    - **Domain Names**: Enter `example.com` and press `Enter`. Enter `www.example.com` and press `Enter`.
    - **Scheme**: Select `http` or `https` (upstream service protocol).
-   - **Forward Hostname / IP**: Enter internal service IP (e.g., `192.168.1.225` for Authentik or Immich).
+   - **Forward Hostname / IP**: Enter internal service IP (e.g., `VLAN 1 (Mgmt)` for Authentik or Immich).
    - **Forward Port**: Enter internal service port (e.g., `9000`).
    - **Websockets Support**: Toggle **ON** (recommended for modern web applications).
 4. **SSL Tab**:
@@ -197,13 +197,13 @@ After deploying your proxy host and SSL certificate:
 Follow this exact end-to-end playbook if you need to rebuild your **Nginx Proxy Manager** container and re-establish your **Let's Encrypt Wildcard SSL** setup from scratch.
 
 ### Phase 1: Provision NPM LXC on Proxmox VE (Bulakan)
-1. Open Proxmox VE Shell on node `Bulakan` (`192.168.1.25`).
+1. Open Proxmox VE Shell on node `Bulakan` (`VLAN 1 [MGMT]`).
 2. Run the Proxmox VE Community Helper Script:
    ```bash
    bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/nginxproxymanager.sh)"
    ```
-3. Follow the wizard defaults (Set Static IP: `192.168.1.210/24`, Gateway: `192.168.1.1`).
-4. Access the NPM Admin GUI: `http://192.168.1.210:81`.
+3. Follow the wizard defaults (Set Static IP: `VLAN 1 (Mgmt)/24`, Gateway: `VLAN 1 [Gateway]`).
+4. Access the NPM Admin GUI: `http://VLAN 1 (Mgmt):81`.
 5. Log in using default credentials:
    - **Email**: `admin@example.com`
    - **Password**: `changeme`
@@ -223,7 +223,7 @@ Follow this exact end-to-end playbook if you need to rebuild your **Nginx Proxy 
 ---
 
 ### Phase 3: Issue Wildcard SSL Certificate (`*.homelab-admin.me`)
-1. In NPM (`http://192.168.1.210:81`), go to **SSL Certificates** $\rightarrow$ **Add SSL Certificate** $\rightarrow$ **Let's Encrypt**.
+1. In NPM (`http://VLAN 1 (Mgmt):81`), go to **SSL Certificates** $\rightarrow$ **Add SSL Certificate** $\rightarrow$ **Let's Encrypt**.
 2. **Domain Names**: Type `*.homelab-admin.me` [Enter], then `homelab-admin.me` [Enter].
 3. Toggle **Use a DNS Challenge** $\rightarrow$ Select **Cloudflare**.
 4. Set **Credentials File Content**:
@@ -240,9 +240,9 @@ In NPM $\rightarrow$ **Hosts** $\rightarrow$ **Proxy Hosts** $\rightarrow$ Click
 
 | Domain | Forward IP / Port | Websockets | SSL Cert | Toggles |
 | :--- | :--- | :--- | :--- | :--- |
-| `auth.homelab-admin.me` | `http://192.168.110.225:9000` | **ON** | `*.homelab-admin.me` | Force SSL, HTTP/2, HSTS |
-| `photos.homelab-admin.me` | `http://192.168.110.47:2283` | **ON** | `*.homelab-admin.me` | Force SSL, HTTP/2, HSTS |
-| `media.homelab-admin.me` | `http://192.168.1.126:8096` | **ON** | `*.homelab-admin.me` | Force SSL, HTTP/2, HSTS |
+| `auth.homelab-admin.me` | `http://VLAN 110 (Services):9000` | **ON** | `*.homelab-admin.me` | Force SSL, HTTP/2, HSTS |
+| `photos.homelab-admin.me` | `http://VLAN 110 (Services):2283` | **ON** | `*.homelab-admin.me` | Force SSL, HTTP/2, HSTS |
+| `media.homelab-admin.me` | `http://VLAN 1 (Mgmt):8096` | **ON** | `*.homelab-admin.me` | Force SSL, HTTP/2, HSTS |
 
 > [!TIP]
 > For **Immich (`photos`)**, open the **Advanced** tab and add `client_max_body_size 50000M;` to support large photo/video uploads.

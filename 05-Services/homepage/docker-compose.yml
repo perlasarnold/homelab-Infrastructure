@@ -13,7 +13,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Asia/Manila
-      - HOMEPAGE_ALLOWED_HOSTS=home.homelab-admin.me,192.168.120.211,192.168.1.250,localhost,127.0.0.1,*
+      - HOMEPAGE_ALLOWED_HOSTS=home.homelab-admin.me,VLAN 120 (DMZ),VLAN 1 (Mgmt),localhost,127.0.0.1,*
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]

@@ -14,7 +14,7 @@ We want Cebu to check the Synology bookshelf and copy any new books (files) to i
 ## 🛠️ Step 1: The Connection (Mounting)
 Before Cebu can copy files, it needs to be able to "see" the Synology folder. We did this by "mounting" it.
 
-- **Synology Path:** `//192.168.1.12/Seagate`
+- **Synology Path:** `//VLAN 1 [MGMT-NAS]/Seagate`
 - **Cebu Path:** `/mnt/pve/PNAS-Seagate` (This is like a shortcut on Cebu that leads to the NAS).
 
 > [!NOTE]

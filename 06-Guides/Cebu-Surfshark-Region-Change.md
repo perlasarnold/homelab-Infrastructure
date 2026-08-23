@@ -32,14 +32,14 @@ Find the `gluetun` service block. Under the `environment` section, locate the `S
 Change the country value (e.g., `Netherlands`, `Brazil`, `Switzerland`, `USA`). *Note: Gluetun expects the standard capitalized English name of the country.*
 
 ### 2. Push the Changes to Proxmox
-Open an SSH terminal to your Proxmox host (`ssh root@192.168.1.26`) and push the updated file into your LXC container (assuming LXC ID `417`):
+Open an SSH terminal to your Proxmox host (`ssh root@VLAN 1 [MGMT]`) and push the updated file into your LXC container (assuming LXC ID `417`):
 
 ```bash
 # From your Windows machine:
-scp /opt/homelab-infrastructure\arr-stack-docker-compose.yml root@192.168.1.26:/root/docker-compose.yml
+scp /opt/homelab-infrastructure\arr-stack-docker-compose.yml root@VLAN 1 [MGMT]:/root/docker-compose.yml
 
 # Then, SSH into Proxmox and push it into the LXC:
-ssh root@192.168.1.26
+ssh root@VLAN 1 [MGMT]
 pct push 417 /root/docker-compose.yml /root/arr-stack/docker-compose.yml
 ```
 

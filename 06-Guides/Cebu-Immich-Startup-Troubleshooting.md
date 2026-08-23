@@ -29,7 +29,7 @@ After resolving the container startup issue, the `immich-web.service` inside the
   - `mp0: /mnt/truenas-photo/Immich,mp=/opt/immich/upload`
   - `mp1: /mnt/truenas-photo,mp=/mnt/truenas-photo`
 - **Result:** The directory `/mnt/truenas-photo/Immich` was completely missing on the host. Because the mount point source path did not exist on the Cebu host, the LXC pre-start hook script failed with status code `2`, causing the container startup block.
-- **Fix:** Created the missing directory `/mnt/truenas-photo/Immich` on the host, which is an SMB share mounted from TrueNAS (`//192.168.1.211/photo`).
+- **Fix:** Created the missing directory `/mnt/truenas-photo/Immich` on the host, which is an SMB share mounted from TrueNAS (`//VLAN 1 (Mgmt)/photo`).
 - **Verification:** Successfully started container `112` using `pct start 112`.
 
 ### 2. Resolving the `immich-web` Service Crash Loop

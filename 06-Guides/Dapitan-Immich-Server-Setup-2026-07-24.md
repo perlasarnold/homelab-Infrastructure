@@ -3,7 +3,7 @@
 - **Date:** July 24, 2026
 - **Objective:** Document the deployment and data migration of the headless Ubuntu 24.04 LTS Immich photo management server (Container 504 `immich-dapitan`) on Proxmox node `Dapitan`, utilizing the attached 18TB ZFS bulk storage pool (`bulk18/immich-data`).
 - **Status:** Active / Production Primary
-- **Access URL:** `http://192.168.1.147:2283`
+- **Access URL:** `http://VLAN 1 (Mgmt):2283`
 
 ---
 
@@ -13,10 +13,10 @@ The Immich photo management server was provisioned as a lightweight, non-GUI (he
 
 | Parameter | Specification | Rationale |
 | :--- | :--- | :--- |
-| **Host Node** | `Dapitan` (192.168.1.27) | Node 3 in `Homelab-Net` cluster; offloads storage/compute from Bulakan. |
+| **Host Node** | `Dapitan` (VLAN 1 [MGMT]) | Node 3 in `Homelab-Net` cluster; offloads storage/compute from Bulakan. |
 | **Container ID** | `504` | Structured 500-series guest ID indexing for Dapitan node. |
 | **Hostname** | `immich-dapitan` | Descriptive hostname in local DNS. |
-| **IP Address** | `192.168.1.147` | DHCP assigned static lease / container address. |
+| **IP Address** | `VLAN 1 (Mgmt)` | DHCP assigned static lease / container address. |
 | **Operating System** | Ubuntu 24.04 LTS Server (Headless / CLI) | Non-GUI Linux LTS platform with modern kernel support. |
 | **CPU Allocation** | 4 Cores | High-throughput for EXIF parsing, video processing, and face vector search. |
 | **RAM Allocation** | 8192 MiB (8 GiB) | Memory footprint optimized for database & machine learning workers. |
@@ -85,12 +85,12 @@ The Immich photo management server was provisioned as a lightweight, non-GUI (he
 3. Created `/opt/immich/docker-compose.yml` with `security_opt: [ "apparmor:unconfined" ]` for Docker container execution.
 
 ### Step 4: Non-Disruptive Background Data Migration
-1. **Source Mounting**: Mounted Bulakan VM 204 ZFS volume partition read-only at `/mnt/immich-vm-temp` on host Bulakan (`192.168.1.25`), keeping VM 204 online without write locks.
+1. **Source Mounting**: Mounted Bulakan VM 204 ZFS volume partition read-only at `/mnt/immich-vm-temp` on host Bulakan (`VLAN 1 [MGMT]`), keeping VM 204 online without write locks.
 2. **Library Asset Transfer**: Executed `rsync` from Bulakan host directly to Dapitan's 18TB dataset `/mnt/bindmounts/immich-data/`:
    ```bash
    nohup rsync -av --info=progress2 \
      /mnt/immich-vm-temp/home/homelab-admin/immich-app/mnt/immich-nas/ \
-     root@192.168.1.27:/mnt/bindmounts/immich-data/ \
+     root@VLAN 1 [MGMT]:/mnt/bindmounts/immich-data/ \
      > /var/log/dapitan_immich_rsync.log 2>&1 &
    ```
    *Transferred:* **224.4 GB** total across `library`, `upload`, `thumbs`, `encoded-video`, `profile`, and `backups`.
@@ -123,7 +123,7 @@ Query executed inside `immich_postgres` container on Dapitan:
 | **User Accounts** | `1` | Verified 100% match |
 
 ### Service Health
-- **HTTP Endpoint**: `http://192.168.1.147:2283` returns `HTTP 200 OK`.
+- **HTTP Endpoint**: `http://VLAN 1 (Mgmt):2283` returns `HTTP 200 OK`.
 - **Container Services**: `immich_server`, `immich_machine_learning`, `immich_postgres`, `immich_redis` all reporting `healthy`.
 
 ### Network Outage and Live Repair
@@ -136,7 +136,7 @@ Investigation showed:
 
 - Immich returned HTTP 200 on `127.0.0.1:2283` inside CT 504.
 - All four Immich Docker containers remained healthy.
-- CT 504 could not ARP or ping gateway `192.168.1.1`.
+- CT 504 could not ARP or ping gateway `VLAN 1 [Gateway]`.
 - DNS resolution consequently timed out.
 - The Dapitan host and CT 509 retained normal gateway connectivity.
 - Host interface `veth504i0` was up but was no longer a member of `vmbr0`.
@@ -151,9 +151,9 @@ This restored the network without restarting CT 504, Docker, or Immich.
 Post-repair verification confirmed:
 
 - `veth504i0` was forwarding through `vmbr0`.
-- CT 504 could reach `192.168.1.1`.
+- CT 504 could reach `VLAN 1 [Gateway]`.
 - `archive.ubuntu.com` resolved normally.
-- Dapitan reached `http://192.168.1.147:2283` with HTTP 200.
+- Dapitan reached `http://VLAN 1 (Mgmt):2283` with HTTP 200.
 - `https://immich.homelab-admin.me/` returned HTTP 200.
 
 Rollback for the live bridge attachment, if ever required:
@@ -180,5 +180,5 @@ bridge link show dev veth504i0
 ## 🔒 Rollback & Maintenance Plan
 
 1. **Bulakan VM 204 Safety**: Bulakan VM 204 remains unmodified and fully functional in a powered-up standby state. If required, proxy routing can be reverted instantly.
-2. **Reverse Proxy Update**: Update Nginx Proxy Manager (`192.168.1.210`) upstream target for Immich from `192.168.1.154` to `192.168.1.147`.
+2. **Reverse Proxy Update**: Update Nginx Proxy Manager (`VLAN 1 (Mgmt)`) upstream target for Immich from `VLAN 1 (Mgmt)` to `VLAN 1 (Mgmt)`.
 3. **Decommissioning VM 204**: After 7 days of observation on Dapitan, VM 204 on Bulakan can be powered down to reclaim 12 GB RAM and 600 GB ZFS disk space.

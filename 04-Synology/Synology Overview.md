@@ -83,8 +83,8 @@ Synology DiskStation Manager (DSM) is a **NAS (Network Attached Storage) operati
 |---------|-------|
 | IP Address | 192.168.1.x (DHCP reservation recommended) |
 | Subnet | 255.255.255.0 |
-| Gateway | 192.168.1.1 |
-| DNS | 192.168.1.3 (Pi-hole) |
+| Gateway | VLAN 1 [Gateway] |
+| DNS | VLAN 1 (Mgmt) (Pi-hole) |
 | Hostname | pnas.local |
 | Link Aggregation | Optional (if using both LAN ports) |
 

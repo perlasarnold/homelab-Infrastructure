@@ -1,7 +1,7 @@
 # Cebu — Proxmox VE 9.2.5 Update
 
 > **Date:** 2026-07-23  
-> **Node:** Cebu (`192.168.1.26`)  
+> **Node:** Cebu (`VLAN 1 [MGMT]`)  
 > **Objective:** Safely update Cebu from Proxmox VE 9.1.11 to 9.2.5,
 > matching Bulakan, with verified rollback data and a controlled reboot.
 

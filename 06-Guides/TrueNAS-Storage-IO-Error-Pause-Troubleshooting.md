@@ -8,11 +8,11 @@
 
 ## 1. Problem Statement
 
-The TrueNAS SCALE server (IP `192.168.1.211`) went into an error state, causing complete loss of storage services (SMB shares `/mnt/cebu-seagate` and `/mnt/truenas-photo` were unreachable) and making hosted media applications (Plex, Jellyfin) fail. 
+The TrueNAS SCALE server (IP `VLAN 1 (Mgmt)`) went into an error state, causing complete loss of storage services (SMB shares `/mnt/cebu-seagate` and `/mnt/truenas-photo` were unreachable) and making hosted media applications (Plex, Jellyfin) fail. 
 
 Symptoms included:
 - The TrueNAS VM was marked as "running" in Proxmox, but was completely unresponsive.
-- Pings to `192.168.1.211` failed with "Destination Host Unreachable."
+- Pings to `VLAN 1 (Mgmt)` failed with "Destination Host Unreachable."
 - Attempting to query VM status via QEMU Guest Agent resulted in `QEMU guest agent is not running`.
 - Administrative reboots of the VM from Proxmox timed out (`VM quit/powerdown failed - got timeout`).
 
@@ -21,7 +21,7 @@ Symptoms included:
 ## 2. Investigation & Root Cause Analysis
 
 ### Step 1: Inspect Detailed VM Status in Proxmox
-We logged into the Proxmox Cebu host (`192.168.1.26`) and queried the detailed VM status using:
+We logged into the Proxmox Cebu host (`VLAN 1 [MGMT]`) and queried the detailed VM status using:
 ```bash
 qm status 120 --verbose
 ```
@@ -94,7 +94,7 @@ qm start 120
 
 ### Step 4: Verify Service and Mount Status
 After the VM booted, we checked:
-1. **Network Ping**: `192.168.1.211` responded to pings successfully.
+1. **Network Ping**: `VLAN 1 (Mgmt)` responded to pings successfully.
 2. **QEMU Guest Agent**:
    ```bash
    qm guest exec 120 -- systemctl status qemu-guest-agent
@@ -109,7 +109,7 @@ After the VM booted, we checked:
    ```bash
    df -h | grep -E 'truenas|seagate|photo'
    ```
-   *Outcome: Verified `//192.168.1.211/seagate/Share` and `//192.168.1.211/photo` were successfully mounted and readable.*
+   *Outcome: Verified `//VLAN 1 (Mgmt)/seagate/Share` and `//VLAN 1 (Mgmt)/photo` were successfully mounted and readable.*
 
 ---
 

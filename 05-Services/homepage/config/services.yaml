@@ -17,17 +17,17 @@
 
     - Nginx Proxy Manager:
         icon: nginx-proxy-manager.png
-        href: http://192.168.120.211:81
+        href: http://VLAN 120 (DMZ):81
         description: Reverse Proxy & Wildcard SSL Management (Cebu CT 105)
 
 - Core Hypervisors & Infrastructure:
     - Proxmox Bulakan:
         icon: proxmox.png
-        href: https://192.168.1.25:8006
+        href: https://VLAN 1 [MGMT]:8006
         description: Primary PVE Hypervisor Node (Host 1)
         widget:
           type: proxmox
-          url: https://192.168.1.25:8006
+          url: https://VLAN 1 [MGMT]:8006
           username: homepage-monitoring@pve!token-id
           password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
           node: Bulakan
@@ -35,11 +35,11 @@
 
     - Proxmox Cebu:
         icon: proxmox.png
-        href: https://192.168.1.26:8006
+        href: https://VLAN 1 [MGMT]:8006
         description: Secondary PVE Hypervisor Node (Host 2)
         widget:
           type: proxmox
-          url: https://192.168.1.26:8006
+          url: https://VLAN 1 [MGMT]:8006
           username: homepage-monitoring@pve!token-id
           password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
           node: cebu
@@ -47,11 +47,11 @@
 
     - Proxmox Dapitan:
         icon: proxmox.png
-        href: https://192.168.1.27:8006
+        href: https://VLAN 1 [MGMT]:8006
         description: Tertiary PVE Hypervisor Node (Host 3)
         widget:
           type: proxmox
-          url: https://192.168.1.27:8006
+          url: https://VLAN 1 [MGMT]:8006
           username: homepage-monitoring@pve!token-id
           password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
           node: Dapitan
@@ -59,17 +59,17 @@
 
     - Home Assistant OS:
         icon: home-assistant.png
-        href: http://192.168.1.111:8123
+        href: http://VLAN 1 (Mgmt):8123
         description: Smart Home Automation Hub (Dapitan VM 111)
 
     - Pi-hole Primary (Bulakan):
         icon: pi-hole.png
-        href: http://192.168.1.4/admin
+        href: http://VLAN 1 [DNS-Primary]/admin
         description: Network DNS Sinkhole & Adblock (Bulakan CT 301)
 
     - Pi-hole Secondary (Cebu):
         icon: pi-hole.png
-        href: http://192.168.1.5/admin
+        href: http://VLAN 1 [DNS-Secondary]/admin
         description: Secondary DNS Sinkhole (Cebu CT 401)
 
     - PXE Boot Server:
@@ -100,7 +100,7 @@
 
     - Calibre-Web:
         icon: calibre-web.png
-        href: http://192.168.1.115:8083
+        href: http://VLAN 1 (Mgmt):8083
         description: Ebook Library Web Reader (Bulakan CT 113)
 
     - BookOrbit:
@@ -115,7 +115,7 @@
         description: TV Series Download & Library Automation
         widget:
           type: sonarr
-          url: http://192.168.110.42:8989
+          url: http://VLAN 110 (Services):8989
           key: <YOUR_SONARR_API_KEY>
 
     - Transmission VPN:
@@ -124,7 +124,7 @@
         description: Surfshark WireGuard BitTorrent Client
         widget:
           type: transmission
-          url: http://192.168.110.42:9091
+          url: http://VLAN 110 (Services):9091
 
     - Readarr:
         icon: readarr.png
@@ -133,43 +133,43 @@
 
     - Radarr:
         icon: radarr.png
-        href: http://192.168.110.42:7878
+        href: http://VLAN 110 (Services):7878
         description: Movie Collection & Download Automation
 
     - Prowlarr:
         icon: prowlarr.png
-        href: http://192.168.110.42:9696
+        href: http://VLAN 110 (Services):9696
         description: Centralized Indexer & Torrent Tracker Sync
 
     - Bazarr:
         icon: bazarr.png
-        href: http://192.168.110.42:6767
+        href: http://VLAN 110 (Services):6767
         description: Subtitle Management Automation
 
     - Wizarr:
         icon: plex.png
-        href: http://192.168.110.42:5690
+        href: http://VLAN 110 (Services):5690
         description: Media Invitation & User Onboarding Portal
 
 - Storage & Synology Cloud (PNAS):
     - Synology DSM:
         icon: synology.png
-        href: http://192.168.1.12:5000
+        href: http://VLAN 1 [MGMT-NAS]:5000
         description: Synology DiskStation Manager Interface
 
     - Synology Photos:
         icon: synology-photos.png
-        href: http://192.168.1.12:5000/?launchApp=SYNO.Foto.AppInstance
+        href: http://VLAN 1 [MGMT-NAS]:5000/?launchApp=SYNO.Foto.AppInstance
         description: Synology Centralized Photo Management
 
     - Synology Drive:
         icon: synology-drive.png
-        href: http://192.168.1.12:5000/?launchApp=SYNO.SDS.Drive.Application
+        href: http://VLAN 1 [MGMT-NAS]:5000/?launchApp=SYNO.SDS.Drive.Application
         description: Synology Personal Cloud Drive Sync
 
     - Synology File Station:
         icon: synology.png
-        href: http://192.168.1.12:5000/?launchApp=SYNO.SDS.App.FileStation3.Instance
+        href: http://VLAN 1 [MGMT-NAS]:5000/?launchApp=SYNO.SDS.App.FileStation3.Instance
         description: Synology Cloud File Browser
 
 - Cloud & Infrastructure Management:

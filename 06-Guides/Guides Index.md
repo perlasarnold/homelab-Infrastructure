@@ -19,8 +19,8 @@ Step-by-step guides for common homelab tasks. Written for beginners.
 - [[Cebu-Immich-LXC-Setup-Guide]] — High-performance Debian 13 LXC Immich deployment with Intel iGPU Passthrough on Cebu
 - [[Cebu-Immich-Startup-Troubleshooting]] — Resolving container boot failure and web service crash loop on Cebu
 - [[Plex-Cluster-Hardware-Acceleration-and-RAM-Transcoding-Guide-2026-08-21]] — Standardizing Intel QuickSync GPU transcoding and RAM-disk transcoding across Bulakan, Cebu, and Dapitan with 1-click automation
-- [[Dapitan-Plex-Setup-Recovery-2026-07-24]] — Restoring inaccessible Dapitan Plex Media Server CT 509 with static IP 192.168.1.208 and 18TB ZFS media library mount
-- [[Dapitan-Jellyfin-Replication-Guide-2026-07-24]] — Replicating Cebu Jellyfin to Dapitan CT 510 with IP 192.168.1.243 and 18TB ZFS media library mount
+- [[Dapitan-Plex-Setup-Recovery-2026-07-24]] — Restoring inaccessible Dapitan Plex Media Server CT 509 with static IP VLAN 1 (Mgmt) and 18TB ZFS media library mount
+- [[Dapitan-Jellyfin-Replication-Guide-2026-07-24]] — Replicating Cebu Jellyfin to Dapitan CT 510 with IP VLAN 1 (Mgmt) and 18TB ZFS media library mount
 - [[Linux-Mint-Remote-Desktop-Dapitan-Setup-Guide-2026-08-01]] — Provisioning Linux Mint 22 VM on Dapitan SSD with 128GB disk, VLAN 20 placement, Guacamole HTML5 RDP, and Authentik MFA
 - [[Linux-Mint-Remote-Desktop-Dapitan-Setup-Guide-2026-08-01]] — Provisioning Linux Mint 22 VM on Dapitan SSD with 128GB disk, VLAN 20 placement, Guacamole HTML5 RDP, and Authentik MFA
 - [[Home-Assistant-on-Proxmox-Setup]] — Installing Home Assistant OS (HAOS) VM via Proxmox VE Helper Script

@@ -23,7 +23,7 @@
 
 ## ⚡ Step-by-Step Changes Applied
 
-### 1. Bulakan Plex (`CT 104` — `192.168.1.54:32400`)
+### 1. Bulakan Plex (`CT 104` — `VLAN 1 (Mgmt):32400`)
 1. **GPU Passthrough**:
    - Added `/dev/dri/card0` (GID `44` - `video`) and `/dev/dri/renderD128` (GID `104` - `render`) into `/etc/pve/lxc/104.conf`.
 2. **Resource Scaling**:
@@ -35,7 +35,7 @@
 5. **Verification**:
    - Verified `vainfo` profile acceleration under user `plex` and confirmed `HTTP/1.1 200 OK` on `/web/index.html`.
 
-### 2. Cebu Plex (`CT 109` — `192.168.1.215:32400`)
+### 2. Cebu Plex (`CT 109` — `VLAN 1 (Mgmt):32400`)
 1. **Memory Upgrade**:
    - Increased container RAM from `2048 MB` $\rightarrow$ `4096 MB` (`pct set 109 -memory 4096`).
 2. **RAM-Disk Transcoding**:
@@ -45,7 +45,7 @@
 4. **Verification**:
    - Verified active service status and `HTTP/1.1 200 OK` on `/web/index.html`.
 
-### 3. Dapitan Plex (`CT 509` — `192.168.110.44:32400` / `plexdp.homelab-admin.me`)
+### 3. Dapitan Plex (`CT 509` — `VLAN 110 (Services):32400` / `plexdp.homelab-admin.me`)
 1. **GPU Passthrough**:
    - Added `/dev/dri/card0` (GID `44` - `video`) and `/dev/dri/renderD128` (GID `993` - `render`) into `/etc/pve/lxc/509.conf`.
 2. **Driver Support**:

@@ -1,5 +1,5 @@
 ###############################################################################
-# Cebu Node Resources (192.168.1.26)
+# Cebu Node Resources (VLAN 1 [MGMT])
 # VLAN & Subnet Segmented Deployment
 # Architecture: Management (VLAN 10), Services (VLAN 110), DMZ (VLAN 120)
 ###############################################################################
@@ -20,8 +20,8 @@ module "cloudflared_cebu" {
   cores        = 1
   disk_size    = 8
   vlan_id      = 120
-  ipv4_address = "192.168.120.7/24"
-  gateway      = "192.168.120.1"
+  ipv4_address = "VLAN 120 (DMZ)/24"
+  gateway      = "VLAN 120 (DMZ)"
 }
 
 # ---------------------------------------------------------------------------
@@ -40,8 +40,8 @@ module "npm_cebu" {
   cores        = 2
   disk_size    = 16
   vlan_id      = 120
-  ipv4_address = "192.168.120.210/24"
-  gateway      = "192.168.120.1"
+  ipv4_address = "VLAN 120 (DMZ)/24"
+  gateway      = "VLAN 120 (DMZ)"
 }
 
 # ---------------------------------------------------------------------------

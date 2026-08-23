@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # ⛳ Dapitan Golf Swing Analyzer Docker Stack Automated Installer
-# Node: Dapitan (192.168.1.27) | Host ZFS Dataset: bulk18/golf-analyzer-data
+# Node: Dapitan (VLAN 1 [MGMT]) | Host ZFS Dataset: bulk18/golf-analyzer-data
 # Web URL: https://golf.homelab-admin.me (Port 8086 noVNC)
 # ==============================================================================
 
@@ -16,9 +16,9 @@ STORAGE_POOL="${STORAGE_POOL:-vm-fast}"
 ZFS_BULK_POOL="${ZFS_BULK_POOL:-bulk18}"
 BRIDGE="${BRIDGE:-vmbr0}"
 VLAN_TAG="${VLAN_TAG:-110}"
-IP_ADDR="${IP_ADDR:-192.168.110.51/24}"
-GATEWAY="${GATEWAY:-192.168.110.1}"
-DNS_SERVER="${DNS_SERVER:-192.168.1.4}"
+IP_ADDR="${IP_ADDR:-VLAN 110 (Services)/24}"
+GATEWAY="${GATEWAY:-VLAN 110 (Services)}"
+DNS_SERVER="${DNS_SERVER:-VLAN 1 [DNS-Primary]}"
 MOUNT_POINT="${MOUNT_POINT:-/mnt/bindmounts/golf-analyzer-data}"
 APP_DIR="${APP_DIR:-/opt/golf-swing-analyzer}"
 

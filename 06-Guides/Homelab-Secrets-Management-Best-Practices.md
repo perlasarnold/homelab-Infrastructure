@@ -7,7 +7,7 @@
 
 ## 🚨 CRITICAL AUDIT ALERT: Plaintext Credentials Found!
 
-During a proactive security audit, several Python scripts inside the `scripts/` directory were identified as containing plaintext credentials for the root account on Proxmox nodes (`192.168.1.25` and `192.168.1.26`):
+During a proactive security audit, several Python scripts inside the `scripts/` directory were identified as containing plaintext credentials for the root account on Proxmox nodes (`VLAN 1 [MGMT]` and `VLAN 1 [MGMT]`):
 
 *   [[proxmox-ssh-fix.py]] in `scripts/proxmox-ssh-fix.py`
 *   [[proxmox-fix-final.py]] in `scripts/proxmox-fix-final.py`

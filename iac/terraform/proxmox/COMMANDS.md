@@ -69,10 +69,10 @@ bash -c "$(wget -qLO - https://github.com/tteck/Proxmox/raw/main/ct/netbootxyz.s
 ```
 
 ### 3. Access Web UI
-- URL: `http://VLAN 1 (Mgmt):3000` (or DHCP-assigned IP)
+- URL: `http://192.168.1.54:3000` (or DHCP-assigned IP)
 - Configure PXE boot options, local asset caching, etc.
 
 ### 4. Network Requirements
 For PXE booting clients, ensure:
-- DHCP server points to `VLAN 1 (Mgmt)` for TFTP (option 66/67)
+- DHCP server points to `192.168.1.54` for TFTP (option 66/67)
 - Firewall allows UDP 69 (TFTP), TCP 80/3000 (HTTP/Web)

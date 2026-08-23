@@ -1,7 +1,7 @@
 # 🛡️ Cebu Proxmox Node VLAN & Subnet Migration Guide
 
 * **Date:** 2026-07-30
-* **Objective:** Configure 802.1Q Virtual LAN (VLAN) tagging and subnet isolation for the Proxmox **Cebu** hypervisor node (`VLAN 1 [MGMT]`), segmenting its workloads across Management (VLAN 10), Internal Services (VLAN 110), DMZ (VLAN 120), IoT (VLAN 30), and Trusted Workstations (VLAN 20).
+* **Objective:** Configure 802.1Q Virtual LAN (VLAN) tagging and subnet isolation for the Proxmox **Cebu** hypervisor node (`192.168.1.26`), segmenting its workloads across Management (VLAN 10), Internal Services (VLAN 110), DMZ (VLAN 120), IoT (VLAN 30), and Trusted Workstations (VLAN 20).
 * **Scope:** Proxmox VE 9.2.5 (`Cebu`), UniFi Cloud Gateway Max (`Perlas-UnifiGW`), USW Pro Max 16 Switch, and Terraform configuration code.
 * **Maintainer:** Perlas
 
@@ -11,11 +11,11 @@
 
 | VLAN | Subnet Name | Subnet Range | Gateway | Cebu Workloads & Service Targets |
 |:---:|:---|:---|:---|:---|
-| **10** | **MGMT** | `VLAN 10 (MGMT/SecOps)/24` | `VLAN 10 (MGMT/SecOps)` | Hypervisor Management Interface (`VLAN 10 (MGMT/SecOps)`), TrueNAS Web UI (`VLAN 10 (MGMT/SecOps)`) |
-| **20** | **TRUSTED** | `VLAN 20 (Trusted)/24` | `VLAN 20 (Trusted)` | Admin Desktop `Perlas-W10` (VM 101) |
+| **10** | **MGMT** | `192.168.10.0/24` | `192.168.10.1` | Hypervisor Management Interface (`192.168.10.26`), TrueNAS Web UI (`192.168.10.211`) |
+| **20** | **TRUSTED** | `192.168.20.0/24` | `192.168.20.1` | Admin Desktop `Perlas-W10` (VM 101) |
 | **30** | **IOT** | `192.168.30.0/24` | `192.168.30.1` | Smart Home Controller `haos-17.3` (VM 111) |
 | **110** | **SERVICES** | `192.168.42.0/24` | `192.168.42.1` | `pihole-cebu` (CT 401 — `192.168.42.5`), `jellyfin-cebu` (CT 416 — `192.168.42.41`), `plex-cebu` (CT 405 — `192.168.42.215`), `arr-stack-cebu` (CT 417 — `192.168.42.42`), `fileserver` (CT 402/214 — `192.168.42.214`), `authentik` (CT 103 — `192.168.42.225`) |
-| **120** | **DMZ / EXTERNAL** | `VLAN 120 (DMZ)/24` | `VLAN 120 (DMZ)` | `cloudflared-cebu` (CT 404 — `VLAN 120 (DMZ)`), `npm-cebu` (CT 105 — `VLAN 120 (DMZ)`) |
+| **120** | **DMZ / EXTERNAL** | `192.168.120.0/24` | `192.168.120.1` | `cloudflared-cebu` (CT 404 — `192.168.120.7`), `npm-cebu` (CT 105 — `192.168.120.210`) |
 
 ---
 
@@ -30,15 +30,15 @@
 
 ### Step 2: Proxmox Bridge VLAN Awareness (`vmbr0`)
 * **Action:** 
-  1. Open Proxmox Cebu Web Console (`https://VLAN 1 [MGMT]:8006`).
+  1. Open Proxmox Cebu Web Console (`https://192.168.1.26:8006`).
   2. Select **Cebu** ➡️ **System** ➡️ **Network** ➡️ **vmbr0**.
   3. Check **VLAN Aware** ➡️ Click **OK** ➡️ Click **Apply Configuration**.
 * **CLI Rationale:** This updates `/etc/network/interfaces` on Cebu so that `bridge-vlan-aware yes` is appended to `vmbr0`. Individual guest interfaces (`vnetX`) can now attach 802.1Q tags dynamically.
 
 ### Step 3: Phase 1 Container Migration (DMZ - VLAN 120)
 * **Action:**
-  * For **CT 404 (`cloudflared-cebu`)**: Set `vlan=120`, static IP `VLAN 120 (DMZ)/24`, Gateway `VLAN 120 (DMZ)`. **[VERIFIED ACTIVE - Healthy Tunnel Replica]**
-  * For **CT 105 (`npm-cebu`)**: Set `vlan=120`, static IP `VLAN 120 (DMZ)/24`, Gateway `VLAN 120 (DMZ)`. **[VERIFIED ACTIVE - DMZ Ingress Proxy]**
+  * For **CT 404 (`cloudflared-cebu`)**: Set `vlan=120`, static IP `192.168.120.6/24`, Gateway `192.168.120.1`. **[VERIFIED ACTIVE - Healthy Tunnel Replica]**
+  * For **CT 105 (`npm-cebu`)**: Set `vlan=120`, static IP `192.168.120.211/24`, Gateway `192.168.120.1`. **[VERIFIED ACTIVE - DMZ Ingress Proxy]**
 * **Rationale:** Isolates external ingress points into a DMZ subnet. If an internet attack succeeds against Cloudflared or Nginx Proxy Manager, the attacker cannot reach local Proxmox management or SMB shares.
 
 
@@ -67,7 +67,7 @@
 
 1. **VLAN Tagging Verification:** Verified `vmbr0` in Proxmox Cebu processes tagged frames without hypervisor interface dropping.
 2. **DNS & Connectivity:** Confirmed cross-VLAN DNS queries to Pi-hole (`192.168.42.5`) succeed across VLAN boundaries.
-3. **DMZ Isolation:** Confirmed DMZ containers on `192.168.120.x` are blocked from accessing Proxmox management GUI (`VLAN 1 [MGMT]` / `VLAN 10 (MGMT/SecOps)`) and storage administration.
+3. **DMZ Isolation:** Confirmed DMZ containers on `192.168.120.x` are blocked from accessing Proxmox management GUI (`192.168.1.26` / `192.168.10.26`) and storage administration.
 4. **Terraform Integrity:** Terraform definitions in `cebu.tf` pass validation with matching network tags.
 
 ---
@@ -78,7 +78,7 @@ If network communication to a container fails after applying a VLAN tag:
 1. Access the Proxmox Cebu web GUI or console.
 2. Select the container ➡️ **Hardware** ➡️ **Network Device (eth0)** ➡️ **Edit**.
 3. Clear the **VLAN Tag** field (restoring native untagged behavior on VLAN 1).
-4. Reset the container IPv4 address back to `192.168.1.x/24` with Gateway `VLAN 1 [Gateway]`.
+4. Reset the container IPv4 address back to `192.168.1.x/24` with Gateway `192.168.1.1`.
 5. Restart container networking (`pct restart <CTID>`).
 
 ---

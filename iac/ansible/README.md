@@ -70,10 +70,10 @@ cd /root/homelab/ansible
 ### 2. Trigger from Windows via PowerShell
 ```powershell
 # From Windows terminal:
-.\run_update.ps1 -ProxmoxHost "VLAN 1 [MGMT]"
+.\run_update.ps1 -ProxmoxHost "192.168.1.25"
 
 # With automatic host reboot:
-.\run_update.ps1 -ProxmoxHost "VLAN 1 [MGMT]" -AutoReboot
+.\run_update.ps1 -ProxmoxHost "192.168.1.25" -AutoReboot
 ```
 
 ---

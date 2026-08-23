@@ -21,19 +21,19 @@ Welcome to the Core Homelab documentation vault. This notebook covers every comp
 ## 🏗️ Infrastructure at a Glance
 
 ```
-Home Router / Gateway (VLAN 1 [Gateway])
+Home Router / Gateway (192.168.1.1)
        │
-       ├── VLAN 1 [MGMT]  →  Proxmox Bulakan (Primary Node)
+       ├── 192.168.1.25  →  Proxmox Bulakan (Primary Node)
        │                       └── Core LXC Containers & VMs
        │
-       ├── VLAN 1 [MGMT]  →  Proxmox Cebu (Secondary Node)
+       ├── 192.168.1.26  →  Proxmox Cebu (Secondary Node)
        │                       └── Authentik, NPM (Active), Wazuh SIEM
        │
-       ├── VLAN 1 [MGMT]  →  Proxmox Dapitan (Storage & Media Node)
+       ├── 192.168.1.27  →  Proxmox Dapitan (Storage & Media Node)
        │                       ├── 18TB ZFS Bulk Storage (/mnt/bindmounts)
        │                       └── Immich, Plex DP, Jellyfin DP
        │
-       └── VLAN 1 [MGMT-NAS]  →  PNAS Synology (Shared PVE Storage)
+       └── 192.168.1.12  →  PNAS Synology (Shared PVE Storage)
 ```
 
 ---
@@ -42,10 +42,10 @@ Home Router / Gateway (VLAN 1 [Gateway])
 
 | Server | IP | Role | Web UI |
 |--------|----|------|--------|
-| Proxmox Bulakan | `VLAN 1 [MGMT]` | Primary Hypervisor | https://VLAN 1 [MGMT]:8006 |
-| Proxmox Cebu | `VLAN 1 [MGMT]` | Secondary Hypervisor | https://VLAN 1 [MGMT]:8006 |
-| Proxmox Dapitan | `VLAN 1 [MGMT]` | Bulk Storage Hypervisor | https://VLAN 1 [MGMT]:8006 |
-| PNAS Synology | `VLAN 1 [MGMT-NAS]` | Network Attached Storage | https://VLAN 1 [MGMT-NAS]:5001 |
+| Proxmox Bulakan | `192.168.1.25` | Primary Hypervisor | https://192.168.1.25:8006 |
+| Proxmox Cebu | `192.168.1.26` | Secondary Hypervisor | https://192.168.1.26:8006 |
+| Proxmox Dapitan | `192.168.1.27` | Bulk Storage Hypervisor | https://192.168.1.27:8006 |
+| PNAS Synology | `192.168.1.12` | Network Attached Storage | https://192.168.1.12:5001 |
 
 ---
 

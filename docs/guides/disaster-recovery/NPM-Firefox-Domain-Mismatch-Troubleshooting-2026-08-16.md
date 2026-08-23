@@ -2,7 +2,7 @@
 
 > **Date:** 2026-08-16  
 > **Objective:** Diagnose and resolve why Firefox failed to connect to `https://immich.homelab-admin.me` and `https://jellyfin.homelab-admin.me` while Google Chrome succeeded, following the migration to Nginx Proxy Manager (Cebu CT 105).  
-> **Target Environment:** Proxmox VE — `Cebu` (CT 105 / `VLAN 120 (DMZ)`), Proxmox VE — `Dapitan` (CT 504 Immich, CT 510 Jellyfin, CT 509 Plex)  
+> **Target Environment:** Proxmox VE — `Cebu` (CT 105 / `192.168.120.211`), Proxmox VE — `Dapitan` (CT 504 Immich, CT 510 Jellyfin, CT 509 Plex)  
 > **Status:** 🟢 Resolved  
 
 ---
@@ -19,18 +19,18 @@ Following recent Nginx Proxy Manager and Let's Encrypt Wildcard SSL setup:
 
 ### A. DNS Resolution Discrepancy
 Inspecting DNS resolution for `immich.homelab-admin.me` and `jellyfin.homelab-admin.me`:
-- Pi-hole Split-Horizon DNS (`/etc/dnsmasq.d/99-homelab-admin-lan.conf`) had `address=/immich.homelab-admin.me/VLAN 120 (DMZ)` and `address=/jellyfin.homelab-admin.me/VLAN 120 (DMZ)`.
+- Pi-hole Split-Horizon DNS (`/etc/dnsmasq.d/99-homelab-admin-lan.conf`) had `address=/immich.homelab-admin.me/192.168.120.211` and `address=/jellyfin.homelab-admin.me/192.168.120.211`.
 - Public Cloudflare DNS had proxied `AAAA` records pointing to Cloudflare CDN edge (`2606:4700:...`).
 
 ### B. NPM Virtual Host Configuration Inspection
 Querying the active NPM SQLite database (`/data/database.sqlite`) and Nginx server blocks (`/data/nginx/proxy_host/`):
 - **Immich Host (ID 9):** Configured with only `photos.homelab-admin.me`.
-- **Jellyfin Host (ID 10):** Configured with only `media.homelab-admin.me` (pointing to an offline Bulakan IP `VLAN 1 (Mgmt)`).
-- **Jellyfin Host (ID 11):** Configured with only `jellyfindp.homelab-admin.me` (pointing to active Dapitan CT 510 `VLAN 110 (Services):8096`).
+- **Jellyfin Host (ID 10):** Configured with only `media.homelab-admin.me` (pointing to an offline Bulakan IP `192.168.1.126`).
+- **Jellyfin Host (ID 11):** Configured with only `jellyfindp.homelab-admin.me` (pointing to active Dapitan CT 510 `192.168.110.43:8096`).
 - **Plex Host (ID 12):** Configured with only `plexdp.homelab-admin.me`.
 
 ### C. The Root Cause
-1. When Firefox requested `https://immich.homelab-admin.me` or `https://jellyfin.homelab-admin.me`, it sent an SNI header for `immich.homelab-admin.me` / `jellyfin.homelab-admin.me` to NPM (`VLAN 120 (DMZ):443`).
+1. When Firefox requested `https://immich.homelab-admin.me` or `https://jellyfin.homelab-admin.me`, it sent an SNI header for `immich.homelab-admin.me` / `jellyfin.homelab-admin.me` to NPM (`192.168.120.211:443`).
 2. Because Nginx had no `server_name` matching `immich.homelab-admin.me` or `jellyfin.homelab-admin.me`, Nginx routed the request to the default fallback server block.
 3. The fallback server block had no matching certificate, causing Nginx to present a dummy/mismatched certificate or drop the TLS handshake.
 4. **Firefox vs Chrome Behavior:**
@@ -50,19 +50,19 @@ pct exec 105 -- cp /data/database.sqlite /data/database.sqlite.bak-20260816
 ### Step 2: Update Domain Names in NPM Database & Server Blocks
 Updated the proxy hosts to include standard aliases so all intended domain variants match the Let's Encrypt wildcard certificate (`*.homelab-admin.me`):
 
-1. **Proxy Host 9 (Immich Dapitan CT 504 - `VLAN 110 (Services):2283`):**
+1. **Proxy Host 9 (Immich Dapitan CT 504 - `192.168.110.47:2283`):**
    - Added `immich.homelab-admin.me` alongside `photos.homelab-admin.me`.
    - `server_name photos.homelab-admin.me immich.homelab-admin.me;`
 
-2. **Proxy Host 10 (Jellyfin Bulakan CT 110 - `VLAN 110 (Services):8096`):**
-   - Configured `jellyfin.homelab-admin.me` and `media.homelab-admin.me` pointing to primary Bulakan Jellyfin (`VLAN 110 (Services):8096`).
+2. **Proxy Host 10 (Jellyfin Bulakan CT 110 - `192.168.110.41:8096`):**
+   - Configured `jellyfin.homelab-admin.me` and `media.homelab-admin.me` pointing to primary Bulakan Jellyfin (`192.168.110.41:8096`).
    - `server_name jellyfin.homelab-admin.me media.homelab-admin.me;`
 
-3. **Proxy Host 11 (Jellyfin Secondary Dapitan CT 510 - `VLAN 110 (Services):8096`):**
+3. **Proxy Host 11 (Jellyfin Secondary Dapitan CT 510 - `192.168.110.43:8096`):**
    - Retained `jellyfindp.homelab-admin.me` for secondary Dapitan instance.
    - `server_name jellyfindp.homelab-admin.me;`
 
-4. **Proxy Host 12 (Plex Dapitan CT 509 - `VLAN 110 (Services):32400`):**
+4. **Proxy Host 12 (Plex Dapitan CT 509 - `192.168.110.44:32400`):**
    - Added `plex.homelab-admin.me` alongside `plexdp.homelab-admin.me`.
    - `server_name plexdp.homelab-admin.me plex.homelab-admin.me;`
 
@@ -71,7 +71,7 @@ To prevent clients from receiving Cloudflare's public IPv6 CDN proxies (`2606:47
 1. Updated `/etc/dnsmasq.d/99-homelab-admin-lan.conf` on both **Bulakan Primary (CT 301)** and **Cebu Secondary (CT 401)**:
    ```ini
    # Split-Horizon DNS Overrides for homelab-admin.me Infrastructure
-   address=/homelab-admin.me/VLAN 120 (DMZ)
+   address=/homelab-admin.me/192.168.120.211
    address=/homelab-admin.me/::
    server=/www.homelab-admin.me/#
    server=/homelab-admin.github.io/#

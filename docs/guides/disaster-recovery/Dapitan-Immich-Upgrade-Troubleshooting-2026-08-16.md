@@ -4,7 +4,7 @@
 - **Objective:** Resolve Immich update failure following base OS package updates (`apt-get upgrade`), execute Docker Compose container upgrade to Immich `v3.1.0`, verify service health, and establish standard maintenance procedures for CT 504 on host `Dapitan`.
 - **Status:** Completed / Active
 - **Access Endpoints:**
-  - Container IP: `http://VLAN 110 (Services):2283`
+  - Container IP: `http://192.168.110.47:2283`
   - Ingress Reverse Proxy: `https://immich.homelab-admin.me/`
 
 ---
@@ -24,7 +24,7 @@ Immich is deployed as a multi-container Docker Compose application located at `/
 ## 🛠️ Steps Taken & Rationale
 
 ### Step 1: Pre-Upgrade Verification
-- Connected to Proxmox host Dapitan (`VLAN 1 [MGMT]`) and inspected CT 504 `/opt/immich/docker-compose.yml` and `.env`.
+- Connected to Proxmox host Dapitan (`192.168.1.27`) and inspected CT 504 `/opt/immich/docker-compose.yml` and `.env`.
 - Verified `IMMICH_VERSION=RELEASE` in `.env`, configured to pull the latest production release from GitHub Container Registry.
 - Identified current running version: **v3.0.3**.
 
@@ -64,8 +64,8 @@ All four stack containers are running and healthy:
 | `immich_redis` | `docker.io/valkey/valkey:9` | `Up (healthy)` | `6379/tcp` |
 
 ### API Health & Version Verification
-- `curl http://VLAN 110 (Services):2283/api/server/version` ➡️ `{"major":3,"minor":1,"patch":0,"prerelease":null}`
-- `curl http://VLAN 110 (Services):2283/api/server/ping` ➡️ `{"res":"pong"}`
+- `curl http://192.168.110.47:2283/api/server/version` ➡️ `{"major":3,"minor":1,"patch":0,"prerelease":null}`
+- `curl http://192.168.110.47:2283/api/server/ping` ➡️ `{"res":"pong"}`
 
 ---
 
@@ -75,7 +75,7 @@ To perform future upgrades on Dapitan CT 504:
 
 ```bash
 # 1. Access Dapitan CT 504
-ssh root@VLAN 1 [MGMT]
+ssh root@192.168.1.27
 pct enter 504
 
 # 2. Navigate to Immich stack directory

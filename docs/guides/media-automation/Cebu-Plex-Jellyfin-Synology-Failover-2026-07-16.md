@@ -7,11 +7,11 @@
 
 TrueNAS VM 120 could not import `DAS1-18TB`, leaving its `seagate/Share` SMB path unavailable. Plex container 109 and Jellyfin container 416 depended on the Cebu host mount `/mnt/cebu-seagate`, so their media path `/mnt/seagate` was unavailable.
 
-The original Synology NAS at `VLAN 1 [MGMT-NAS]` remained healthy. Its `Seagate` share was already mounted on Cebu at `/mnt/plex1`, with the media collection beneath `/mnt/plex1/Share`.
+The original Synology NAS at `192.168.1.12` remained healthy. Its `Seagate` share was already mounted on Cebu at `/mnt/plex1`, with the media collection beneath `/mnt/plex1/Share`.
 
 ## Steps Taken
 
-1. Verified that `VLAN 1 [MGMT-NAS]` responded to ping and accepted SMB connections on TCP 445.
+1. Verified that `192.168.1.12` responded to ping and accepted SMB connections on TCP 445.
 2. Verified that `/mnt/plex1/Share/Movies` was readable on Cebu.
 3. Backed up the LXC configurations to:
    - `/root/recovery-backups/20260716-synology-failover/109.conf.before`

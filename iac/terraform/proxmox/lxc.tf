@@ -25,8 +25,8 @@ module "prowlarr" {
   tags         = ["proxmox-helper-scripts", "arr-stack"]
   template_id  = var.lxc_template
   datastore_id = var.bulakan_datastore
-  ipv4_address = "VLAN 1 (Mgmt)/24"
-  gateway      = "VLAN 1 [Gateway]"
+  ipv4_address = "192.168.1.53/24"
+  gateway      = "192.168.1.1"
   memory       = 1024
   cores        = 2
 }
@@ -161,8 +161,8 @@ module "jellyfin" {
   datastore_id = var.bulakan_datastore
   memory       = 4096
   cores        = 2
-  ipv4_address = "VLAN 1 (Mgmt)/24"
-  gateway      = "VLAN 1 [Gateway]"
+  ipv4_address = "192.168.1.52/24"
+  gateway      = "192.168.1.1"
   nesting      = true
 }
 
@@ -178,8 +178,8 @@ module "pihole" {
   memory       = 512
   cores        = 2
   disk_size    = 4
-  ipv4_address = "VLAN 1 [DNS-Primary]/24"
-  gateway      = "VLAN 1 [Gateway]"
+  ipv4_address = "192.168.1.4/24"
+  gateway      = "192.168.1.1"
 }
 
 module "cloudflared" {
@@ -208,8 +208,8 @@ module "netbootxyz" {
   memory       = 1024
   cores        = 2
   disk_size    = 16
-  ipv4_address = "VLAN 1 (Mgmt)/24"
-  gateway      = "VLAN 1 [Gateway]"
+  ipv4_address = "192.168.1.54/24"
+  gateway      = "192.168.1.1"
 }
 
 # STOPPED CONTAINERS
@@ -239,8 +239,8 @@ module "nginxproxymanager" {
   datastore_id = var.bulakan_datastore
   memory       = 2048
   cores        = 2
-  ipv4_address = "VLAN 1 (Mgmt)/24"
-  gateway      = "VLAN 1 [Gateway]"
+  ipv4_address = "192.168.1.51/24"
+  gateway      = "192.168.1.1"
   started      = true
 }
 
@@ -255,8 +255,8 @@ module "freeipa" {
   datastore_id = var.bulakan_datastore
   memory       = 4096
   cores        = 2
-  ipv4_address = "VLAN 1 (Mgmt)/24"
-  gateway      = "VLAN 1 [Gateway]"
+  ipv4_address = "192.168.1.50/24"
+  gateway      = "192.168.1.1"
   nesting      = true
 }
 

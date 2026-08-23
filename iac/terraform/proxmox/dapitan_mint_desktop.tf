@@ -2,7 +2,7 @@
 # Linux Mint Desktop Jump Box — Dapitan Node (Proxmox VE VM)
 # VM ID: 505 | Hostname: mint-desktop-dapitan
 # OS: Linux Mint 22 Cinnamon 64-bit
-# Network: VLAN 20 (TRUSTED) — VLAN 20 (Trusted)/24
+# Network: VLAN 20 (TRUSTED) — 192.168.20.70/24
 # Storage: 128 GB on Dapitan ZFS NVMe/SSD pool (vm-fast)
 # Maintainer: Homelab Admin
 # Date: 2026-08-01

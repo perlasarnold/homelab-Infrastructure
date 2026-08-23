@@ -6,7 +6,7 @@
 
 ## Objective
 
-Attach the standalone Dapitan Proxmox VE host (`VLAN 1 [MGMT]`) to the
+Attach the standalone Dapitan Proxmox VE host (`192.168.1.27`) to the
 existing `Homelab-Net` cluster without interrupting guests on Bulakan or
 Cebu, while preserving Dapitan's node-local ZFS storage and direct-mounted
 18 TB datasets.
@@ -15,7 +15,7 @@ Cebu, while preserving Dapitan's node-local ZFS storage and direct-mounted
 
 | Item | Verified state |
 |---|---|
-| Existing nodes | Bulakan (`VLAN 1 [MGMT]`) and Cebu (`VLAN 1 [MGMT]`) |
+| Existing nodes | Bulakan (`192.168.1.25`) and Cebu (`192.168.1.26`) |
 | Cluster | `Homelab-Net`, two of two votes online and quorate |
 | Software | All three hosts on PVE Manager `9.2.5` and kernel `7.0.14-6-pve` |
 | Dapitan guests | None |
@@ -79,9 +79,9 @@ history.
 The join was run from Dapitan with its corosync address explicitly pinned:
 
 ```bash
-pvecm add VLAN 1 [MGMT] \
+pvecm add 192.168.1.25 \
   --use_ssh 1 \
-  --link0 address=VLAN 1 [MGMT]
+  --link0 address=192.168.1.27
 ```
 
 Proxmox backed up Dapitan's old pmxcfs database internally, replaced its
@@ -127,9 +127,9 @@ Per-node backups were created before editing `/etc/hosts`. Each node now
 resolves:
 
 ```text
-VLAN 1 [MGMT] Bulakan.homelab-admin.me Bulakan
-VLAN 1 [MGMT] cebu.homelab-admin.me cebu
-VLAN 1 [MGMT] Dapitan.homelab-admin.me Dapitan
+192.168.1.25 Bulakan.homelab-admin.me Bulakan
+192.168.1.26 cebu.homelab-admin.me cebu
+192.168.1.27 Dapitan.homelab-admin.me Dapitan
 ```
 
 No networking service reload was required.

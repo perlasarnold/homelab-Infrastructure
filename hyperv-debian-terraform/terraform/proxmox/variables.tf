@@ -67,7 +67,7 @@ variable "vm_cidr" {
 variable "vm_gateway" {
   description = "Default gateway for static IP."
   type        = string
-  default     = "VLAN 1 [Gateway]"
+  default     = "192.168.1.1"
 }
 
 variable "ssh_public_key" {

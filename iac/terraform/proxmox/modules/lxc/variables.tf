@@ -81,7 +81,7 @@ variable "unprivileged" {
 variable "ipv4_address" {
   type        = string
   default     = "dhcp"
-  description = "IPv4 address (e.g. VLAN 1 (Mgmt)/24) or 'dhcp'"
+  description = "IPv4 address (e.g. 192.168.1.50/24) or 'dhcp'"
 }
 
 variable "gateway" {

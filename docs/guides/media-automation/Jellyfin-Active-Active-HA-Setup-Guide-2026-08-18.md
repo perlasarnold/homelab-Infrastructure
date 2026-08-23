@@ -14,7 +14,7 @@
                            [ Unified URL: jellyfin.homelab-admin.me ]
                                                │
                                                ▼
-                         [ Cebu NPM (VLAN 120 (DMZ)) Reverse Proxy ]
+                         [ Cebu NPM (192.168.120.211) Reverse Proxy ]
                           • Sticky IP Hash session affinity
                           • Health check routing (5s failover timeout)
                                                │
@@ -23,7 +23,7 @@
                         ▼                                             ▼
            ┌─────────────────────────┐                   ┌─────────────────────────┐
            │   Bulakan Jellyfin CT   │                   │   Dapitan Jellyfin CT   │
-           │  (VLAN 110 (Services):8096)  │                   │  (VLAN 110 (Services):8096)  │
+           │  (192.168.110.41:8096)  │                   │  (192.168.110.43:8096)  │
            │  • Local SQLite DB      │                   │  • Local SQLite DB      │
            │  • Local Transcoder     │                   │  • Local Transcoder     │
            └────────────┬────────────┘                   └────────────┬────────────┘
@@ -48,9 +48,9 @@ Pointing two active Jellyfin instances to the exact same `/config` folder over N
 
 | Parameter | Primary Instance | Secondary Instance | Reverse Proxy |
 | :--- | :--- | :--- | :--- |
-| **Proxmox Node** | Bulakan (`VLAN 1 [MGMT]`) | Dapitan (`VLAN 1 [MGMT]`) | Cebu (`VLAN 1 [MGMT]`) |
+| **Proxmox Node** | Bulakan (`192.168.1.25`) | Dapitan (`192.168.1.27`) | Cebu (`192.168.1.26`) |
 | **Container ID** | `CT 110` | `CT 510` | `CT 105` |
-| **VLAN & IP** | `VLAN 110 (Services):8096` (VLAN 110) | `VLAN 110 (Services):8096` (VLAN 110) | `VLAN 120 (DMZ):81` (VLAN 120) |
+| **VLAN & IP** | `192.168.110.41:8096` (VLAN 110) | `192.168.110.43:8096` (VLAN 110) | `192.168.120.211:81` (VLAN 120) |
 | **Host Names** | `jellyfin` | `jellyfin-dapitan` | `npm-cebu` |
 | **Public Endpoint** | `https://jellyfin.homelab-admin.me` | `https://jellyfindp.homelab-admin.me` (direct alias) | `homelab-admin.me` |
 
@@ -59,7 +59,7 @@ Pointing two active Jellyfin instances to the exact same `/config` folder over N
 ## 3. Step-by-Step Implementation
 
 ### Step 1: Align User Accounts & Library Paths
-1. Log into **Bulakan Jellyfin** (`http://VLAN 110 (Services):8096`) and **Dapitan Jellyfin** (`http://VLAN 110 (Services):8096`).
+1. Log into **Bulakan Jellyfin** (`http://192.168.110.41:8096`) and **Dapitan Jellyfin** (`http://192.168.110.43:8096`).
 2. Verify that user accounts exist on both servers with identical usernames (e.g. `admin`, `family`).
 3. Ensure both servers index the same media library folder structure:
    - Movies: `/media/movies` (or `/media/library/movies`)
@@ -69,7 +69,7 @@ Pointing two active Jellyfin instances to the exact same `/config` folder over N
 
 ### Step 2: Configure NPM Upstream Failover Block on Cebu
 
-On **Cebu NPM** (`VLAN 120 (DMZ)`):
+On **Cebu NPM** (`192.168.120.211`):
 
 1. Access the NPM console / SSH into Cebu CT 105 (`pct exec 105 bash`).
 2. Create an Nginx custom configuration file at `/data/nginx/custom/http_top.conf`:
@@ -77,13 +77,13 @@ On **Cebu NPM** (`VLAN 120 (DMZ)`):
    cat << 'EOF' > /data/nginx/custom/http_top.conf
    upstream jellyfin_ha_cluster {
        ip_hash;
-       server VLAN 110 (Services):8096 max_fails=2 fail_timeout=5s;
-       server VLAN 110 (Services):8096 max_fails=2 fail_timeout=5s backup;
+       server 192.168.110.41:8096 max_fails=2 fail_timeout=5s;
+       server 192.168.110.43:8096 max_fails=2 fail_timeout=5s backup;
    }
    EOF
    ```
 
-3. In the NPM Web Admin UI (`http://VLAN 120 (DMZ):81`), edit the **Proxy Host** for `jellyfin.homelab-admin.me` / `media.homelab-admin.me`:
+3. In the NPM Web Admin UI (`http://192.168.120.211:81`), edit the **Proxy Host** for `jellyfin.homelab-admin.me` / `media.homelab-admin.me`:
    - **Details Tab**:
      - **Forward Scheme**: `http`
      - **Forward Hostname / IP**: `jellyfin_ha_cluster`
@@ -178,7 +178,7 @@ All Jellyfin servers are configured with an automated maintenance pipeline runni
 2. Inspect the server name / network logs: Confirm response is served by **Bulakan CT 110** with `HTTP 200`.
 
 ### Test 2: Simulated Node Failover
-1. On Bulakan Proxmox host (`VLAN 1 [MGMT]`), pause or stop CT 110:
+1. On Bulakan Proxmox host (`192.168.1.25`), pause or stop CT 110:
    ```bash
    pct stop 110
    ```
@@ -198,7 +198,7 @@ All Jellyfin servers are configured with an automated maintenance pipeline runni
 ## 5. Outcome & Rollback
 
 - **Outcome**: High-availability active-active Jellyfin cluster established. If Bulakan fails or undergoes kernel maintenance, Dapitan immediately takes over with zero downtime and synchronized user watch states.
-- **Rollback Procedure**: In NPM Web UI (`http://VLAN 120 (DMZ):81`), edit `jellyfin.homelab-admin.me` and set the Forward Hostname statically back to `VLAN 110 (Services)`.
+- **Rollback Procedure**: In NPM Web UI (`http://192.168.120.211:81`), edit `jellyfin.homelab-admin.me` and set the Forward Hostname statically back to `192.168.110.41`.
 
 ---
 

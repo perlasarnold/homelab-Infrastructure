@@ -1,7 +1,7 @@
 # Guide: Home Assistant OS VM Setup on Cebu Proxmox (Helper Script Method)
 
 * **Date:** May 18, 2026  
-* **Objective:** Deploy Home Assistant OS (HAOS) as a high-performance, resilient Virtual Machine on the `cebu` Proxmox VE node (`VLAN 1 [MGMT]`) utilizing the community-maintained Proxmox VE Helper Script (`haos-vm.sh`) for rapid, standardized deployment.
+* **Objective:** Deploy Home Assistant OS (HAOS) as a high-performance, resilient Virtual Machine on the `cebu` Proxmox VE node (`192.168.1.26`) utilizing the community-maintained Proxmox VE Helper Script (`haos-vm.sh`) for rapid, standardized deployment.
 * **Maintainer:** Perlas  
 
 ---
@@ -10,10 +10,10 @@
 
 Following the community-maintained helper script execution, the active VM is configured on node `cebu` as follows:
 
-* **Host Node:** `cebu` (VLAN 1 [MGMT])
+* **Host Node:** `cebu` (192.168.1.26)
 * **VM ID:** `111`
 * **VM Name:** `haos-17.3`
-* **Active IP Address:** `VLAN 1 (Mgmt)` (Dynamically reported by QEMU Guest Agent)
+* **Active IP Address:** `192.168.1.207` (Dynamically reported by QEMU Guest Agent)
 * **Status:** Running (Active)
 * **CPU:** `2 Cores` (Default allocation)
 * **RAM:** `2 GiB` (2048 MiB) or `4 GiB` (4096 MiB)
@@ -56,7 +56,7 @@ To connect smart home physical devices (like USB Zigbee coordinators or Z-Wave d
 
 ### GUI Discovery Method (Easiest)
 1. Plug your USB coordinator (e.g. *Sonoff Zigbee Dongle Plus, Conbee II, Aeotec Z-Wave Gen5*) into a USB port on the physical `cebu` server.
-2. Log in to the Proxmox Web GUI (`https://VLAN 1 [MGMT]:8006`).
+2. Log in to the Proxmox Web GUI (`https://192.168.1.26:8006`).
 3. Select VM **111 (haos-17.3)** in the sidebar.
 4. Go to **Hardware** > **Add** > **USB Device**.
 5. Select **Use USB Vendor/Device ID**.
@@ -91,26 +91,26 @@ You can manually map these in the **USB Vendor/Device ID** fields of Proxmox GUI
 1. Select VM **111** and open the **Console** tab.
 2. Once booted, the terminal displays the local network IP and port:
    ```
-   IPv4 addresses for enp6s18: VLAN 1 (Mgmt)/24
+   IPv4 addresses for enp6s18: 192.168.1.207/24
    Home Assistant URL:        http://homeassistant.local:8123
    Observer URL:              http://homeassistant.local:4357
    ```
-3. Open a web browser on any computer connected to your local network and navigate to `http://VLAN 1 (Mgmt):8123` or `http://homeassistant.local:8123`.
+3. Open a web browser on any computer connected to your local network and navigate to `http://192.168.1.207:8123` or `http://homeassistant.local:8123`.
 4. Follow the setup wizard to create your primary owner account.
 
 ### Static IP Allocation
 It is highly recommended to pin the IP address for Home Assistant to prevent integrations from losing contact:
 
-* **Recommended (DHCP Reservation):** Log in to your router/firewall dashboard, find the DHCP lease list, match the MAC address of VM 111 (visible in Proxmox > VM 111 > Hardware > Network Device), and reserve `VLAN 1 (Mgmt)` as the static assignment.
+* **Recommended (DHCP Reservation):** Log in to your router/firewall dashboard, find the DHCP lease list, match the MAC address of VM 111 (visible in Proxmox > VM 111 > Hardware > Network Device), and reserve `192.168.1.207` as the static assignment.
 * **Inside Home Assistant (Fallback):** 
   1. Navigate to **Settings** > **System** > **Network**.
   2. Click **IPv4** to expand options.
   3. Change the radio toggle from *DHCP* to *Static*.
   4. Configure:
-     * **IP Address:** `VLAN 1 (Mgmt)`
+     * **IP Address:** `192.168.1.207`
      * **Netmask:** `255.255.255.0` (or `/24`)
-     * **Gateway:** `VLAN 1 [Gateway]`
-     * **DNS Servers:** `VLAN 1 [DNS-Primary]` (Pi-hole on Cebu node) and `1.1.1.1` (Backup)
+     * **Gateway:** `192.168.1.1`
+     * **DNS Servers:** `192.168.1.4` (Pi-hole on Cebu node) and `1.1.1.1` (Backup)
 
 ---
 
@@ -124,5 +124,5 @@ It is highly recommended to pin the IP address for Home Assistant to prevent int
 ## References & Additional Resources
 1. **Community Proxmox VE Helper Scripts:** `https://community-scripts.org/scripts?q=home`  
 2. **Official Home Assistant Installation Docs:** `https://www.home-assistant.io/installation/alternative`  
-3. [[02-Proxmox/Proxmox Overview]] — Hardware profile of node Cebu (`VLAN 1 [MGMT]`).
+3. [[02-Proxmox/Proxmox Overview]] — Hardware profile of node Cebu (`192.168.1.26`).
 4. [[05-Services/Services Index]] — Master list of URLs for internal services.

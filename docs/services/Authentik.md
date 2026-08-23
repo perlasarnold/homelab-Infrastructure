@@ -8,10 +8,10 @@ Modern identity provider (IdP) and SSO platform for the Homelab-Net homelab.
 ## 🛠️ Deployment Details
 - **Method:** [Proxmox VE Helper Script](https://community-scripts.org/scripts?id=authentik) (LXC)
 - **Node:** Proxmox VE (Bulakan)
-- **IP Address:** `VLAN 1 (Mgmt)`
+- **IP Address:** `192.168.1.225`
 - **Port:** `9000` (HTTP)
 - **External URL:** `https://auth.homelab-admin.me` (Routed via NPM + Cloudflare Tunnel)
-- **Initial Setup URL:** `http://VLAN 1 (Mgmt):9000/if/flow/initial-setup/`
+- **Initial Setup URL:** `http://192.168.1.225:9000/if/flow/initial-setup/`
 
 ### Resource Allocation
 | Resource | Value |
@@ -35,7 +35,7 @@ Modern identity provider (IdP) and SSO platform for the Homelab-Net homelab.
     - **Patient Wait:** Authentik requires ~2-5 minutes post-install to fully initialize its internal Go/Python stack.
     - Refreshing after the wait period resolved the issue and exposed the Admin account setup.
 - **Routing Integration:**
-    - Integrated with **Nginx Proxy Manager** (`VLAN 1 (Mgmt)`) for internal proxying.
+    - Integrated with **Nginx Proxy Manager** (`192.168.1.226`) for internal proxying.
     - Exposed externally via **Cloudflare Tunnel** (`Bulakan-CF1`) at `auth.homelab-admin.me`.
     - Maintained "No-Open-Ports" security by avoiding router port forwarding.
 - **Identity Customization:**

@@ -16,7 +16,7 @@ graph TD
         SMB["SMB Share (\\PNAS\Seagate\Share\Downloads)"]
     end
 
-    subgraph Proxmox Host [Bulakan Node - VLAN 1 [MGMT]]
+    subgraph Proxmox Host [Bulakan Node - 192.168.1.25]
         Mount["CIFS Mount (/mnt/pve/PNAS-Downloads)"]
         
         subgraph LXC ["LXC Container 112 (Transmission)"]
@@ -59,7 +59,7 @@ graph TD
 
 We must mount the Synology SMB share (`\\PNAS\Seagate\Share\Downloads\`) to the Proxmox host (`bulakan`) so it can be passed down to LXC 112.
 
-1. SSH into the Proxmox host (`VLAN 1 [MGMT]`) or use the Host Shell in the Proxmox Web GUI.
+1. SSH into the Proxmox host (`192.168.1.25`) or use the Host Shell in the Proxmox Web GUI.
 2. Create a mount directory:
    ```bash
    mkdir -p /mnt/pve/PNAS-Downloads
@@ -70,10 +70,10 @@ We must mount the Synology SMB share (`\\PNAS\Seagate\Share\Downloads\`) to the 
    ```
 4. Add the following line to the bottom, mapping the credentials and setting permissions for the local non-root user (`uid=1000,gid=1000` is the default standard for Docker containers):
    ```text
-   //VLAN 1 [MGMT-NAS]/Seagate/Share/Downloads /mnt/pve/PNAS-Downloads cifs credentials=/root/.pnascredentials,iocharset=utf8,uid=1000,gid=1000,file_mode=0775,dir_mode=0775,nofail 0 0
+   //192.168.1.12/Seagate/Share/Downloads /mnt/pve/PNAS-Downloads cifs credentials=/root/.pnascredentials,iocharset=utf8,uid=1000,gid=1000,file_mode=0775,dir_mode=0775,nofail 0 0
    ```
    > [!NOTE]
-   > Replacing `VLAN 1 [MGMT-NAS]` with PNAS's static IP ensures reliable DNS-independent mounting.
+   > Replacing `192.168.1.12` with PNAS's static IP ensures reliable DNS-independent mounting.
 5. Create the credentials file securely:
    ```bash
    nano /root/.pnascredentials
@@ -254,7 +254,7 @@ Since your Arr stack (Radarr, Sonarr, Prowlarr) is running as separate LXC conta
 
 ### Step 1: Verify Direct LAN Accessibility
 Because we defined `FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24` in Gluetun and exposed the `9091` port on the host, other LAN machines can communicate directly with Transmission.
-* Open a browser on your computer and navigate to: `http://VLAN 1 (Mgmt):9091`
+* Open a browser on your computer and navigate to: `http://192.168.1.112:9091`
 * Enter the credentials configured (`admin` / `supersecretpassword`).
 * If you see the Transmission Web UI, local port routing is perfectly operational!
 
@@ -263,12 +263,12 @@ Because we defined `FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24` in Gluetun and exp
 ### Step 2: Configure Radarr and Sonarr
 To map Radarr and Sonarr to the new VPN-secured Transmission container:
 
-1. Open your Radarr (`http://VLAN 1 (Mgmt):7878` or similar) / Sonarr Web UI.
+1. Open your Radarr (`http://192.168.1.53:7878` or similar) / Sonarr Web UI.
 2. Navigate to **Settings** -> **Download Clients** -> Click **+ Add**.
 3. Select **Transmission**.
 4. Configure the settings:
    * **Name:** `Transmission-VPN`
-   * **Host:** `VLAN 1 (Mgmt)` (The IP of the Transmission LXC)
+   * **Host:** `192.168.1.112` (The IP of the Transmission LXC)
    * **Port:** `9091`
    * **Username:** `admin` (Or your custom user)
    * **Password:** `supersecretpassword` (Or your custom password)
@@ -282,7 +282,7 @@ If Radarr/Sonarr are running in containers or separate LXCs that access the SMB 
   1. In Radarr/Sonarr, go to **Settings** -> **Download Clients** -> Scroll to the bottom to **Remote Path Mappings**.
   2. Click **+ Add**.
   3. Configure:
-     * **Host:** `VLAN 1 (Mgmt)`
+     * **Host:** `192.168.1.112`
      * **Remote Path:** `/downloads/` (The path Transmission uses)
      * **Local Path:** `/mnt/downloads/` (The path Radarr/Sonarr uses to view the SAME Synology directory)
   4. Save.
@@ -291,9 +291,9 @@ If Radarr/Sonarr are running in containers or separate LXCs that access the SMB 
 
 ### Step 3: Configure Prowlarr (Indexer Manager)
 Prowlarr manages your indexers and feeds them into Radarr/Sonarr. If you want indexer proxies routed through the VPN or are passing torrent download tasks directly, ensure Transmission is set up as a download client in Prowlarr:
-1. Open **Prowlarr** (`http://VLAN 1 (Mgmt):9696`).
+1. Open **Prowlarr** (`http://192.168.1.53:9696`).
 2. Go to **Settings** -> **Download Clients** -> Click **+ Add**.
-3. Select **Transmission** and configure it with Host `VLAN 1 (Mgmt)` and Port `9091` just as you did above.
+3. Select **Transmission** and configure it with Host `192.168.1.112` and Port `9091` just as you did above.
 
 ---
 

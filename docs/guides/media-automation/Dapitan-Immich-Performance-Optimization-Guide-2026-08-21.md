@@ -2,7 +2,7 @@
 
 - **Date:** August 21, 2026
 - **Objective:** Improve query speed, web/mobile client load latency, and media processing throughput for the Immich photo management server (Container 504 `immich-dapitan`) on Proxmox node `Dapitan`.
-- **Target Instance:** `immich-dapitan` (`VLAN 110 (Services):2283` / `https://immich.homelab-admin.me/`)
+- **Target Instance:** `immich-dapitan` (`192.168.110.47:2283` / `https://immich.homelab-admin.me/`)
 - **Status:** Completed / Active
 
 ---
@@ -56,9 +56,9 @@ graph TD
 
 ### Phase 1: Pre-Flight Safety & Verification
 
-1. **Verify GPU presence on Dapitan host (`VLAN 1 [MGMT]`):**
+1. **Verify GPU presence on Dapitan host (`192.168.1.27`):**
    ```bash
-   ssh root@VLAN 1 [MGMT]
+   ssh root@192.168.1.27
    ls -la /dev/dri
    ```
    *Expected:* `/dev/dri/card0` and `/dev/dri/renderD128` present.
@@ -201,7 +201,7 @@ graph TD
    proxy_cache_valid 200 7d;
 
    location ~* \.(jpg|jpeg|webp|png|gif)$ {
-       proxy_pass http://VLAN 110 (Services):2283;
+       proxy_pass http://192.168.110.47:2283;
        proxy_cache_valid 200 7d;
        add_header X-Cache-Status $upstream_cache_status;
    }

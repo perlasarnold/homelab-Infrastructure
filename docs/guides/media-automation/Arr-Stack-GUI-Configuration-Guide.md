@@ -13,24 +13,24 @@ To drop the port numbers (e.g., `:8989`) and access your applications cleanly (e
 ### 1. Pi-hole Configuration
 Instead of pointing domains directly to your Arr stack container, point them to NPM.
 1. Go to Pi-hole **Local DNS Records**.
-2. Add the following records pointing to the NPM IP (e.g., `VLAN 1 (Mgmt)`):
-   - `sonarr.local` -> `VLAN 1 (Mgmt)`
-   - `radarr.local` -> `VLAN 1 (Mgmt)`
-   - `bazarr.local` -> `VLAN 1 (Mgmt)`
-   - `wizarr.local` -> `VLAN 1 (Mgmt)`
-   - `prowlarr.local` -> `VLAN 1 (Mgmt)`
-   - `jackett.local` -> `VLAN 1 (Mgmt)`
+2. Add the following records pointing to the NPM IP (e.g., `192.168.1.210`):
+   - `sonarr.local` -> `192.168.1.210`
+   - `radarr.local` -> `192.168.1.210`
+   - `bazarr.local` -> `192.168.1.210`
+   - `wizarr.local` -> `192.168.1.210`
+   - `prowlarr.local` -> `192.168.1.210`
+   - `jackett.local` -> `192.168.1.210`
 
 ### 2. Nginx Proxy Manager Configuration
 Route the incoming NPM traffic to the specific container ports.
 1. Open NPM and click **Add Proxy Host**.
-2. Create an entry for each service, pointing to the Arr LXC IP (`VLAN 1 (Mgmt)`):
-   - `sonarr.local` -> `VLAN 1 (Mgmt):8989`
-   - `radarr.local` -> `VLAN 1 (Mgmt):7878`
-   - `bazarr.local` -> `VLAN 1 (Mgmt):6767`
-   - `wizarr.local` -> `VLAN 1 (Mgmt):5690`
-   - `prowlarr.local` -> `VLAN 1 (Mgmt):9696`
-   - `jackett.local` -> `VLAN 1 (Mgmt):9117`
+2. Create an entry for each service, pointing to the Arr LXC IP (`192.168.1.42`):
+   - `sonarr.local` -> `192.168.1.42:8989`
+   - `radarr.local` -> `192.168.1.42:7878`
+   - `bazarr.local` -> `192.168.1.42:6767`
+   - `wizarr.local` -> `192.168.1.42:5690`
+   - `prowlarr.local` -> `192.168.1.42:9696`
+   - `jackett.local` -> `192.168.1.42:9117`
 3. Toggle **Block Common Exploits** for security and save.
 
 ---

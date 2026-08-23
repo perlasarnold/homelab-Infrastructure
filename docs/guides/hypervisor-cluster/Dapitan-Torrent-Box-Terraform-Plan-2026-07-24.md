@@ -2,7 +2,7 @@
 
 > **Date:** 2026-07-24  
 > **Objective:** Provision a dedicated Linux GUI Torrent Box VM (`torrent-box-dapitan` / VM 501) on Proxmox host `Dapitan` using Terraform IaaC (`bpg/proxmox`), accessible globally via **Google Remote Desktop (CRD)**. Active downloads land on a 128GB NVMe drive (`vm-fast`) to prevent HDD thrashing, with completed files auto-transferred to the 18TB ZFS HDD pool (`bulk18`).  
-> **Target Host:** Proxmox Node `Dapitan` (`VLAN 1 (Mgmt)`)  
+> **Target Host:** Proxmox Node `Dapitan` (`192.168.1.33`)  
 > **Maintainer:** Perlas  
 
 ---
@@ -17,7 +17,7 @@
 > terraform apply -target="proxmox_virtual_environment_vm.torrent_box_dapitan" -target="proxmox_virtual_environment_file.torrent_box_cloud_config"
 > ```
 
-- **VM Specs**: `torrent-box-dapitan` | VM ID `501` | Static IP **`VLAN 1 (Mgmt)/24`** | Host `dapitan` (`VLAN 1 (Mgmt)`)
+- **VM Specs**: `torrent-box-dapitan` | VM ID `501` | Static IP **`192.168.1.71/24`** | Host `dapitan` (`192.168.1.33`)
 - **OS & Remote Access**: Ubuntu 24.04 LTS + XFCE4 GUI + Google Remote Desktop (`chrome-remote-desktop`)
 - **Hardware Specs**: 4 host CPU cores (`--cpu host`), 8 GB fixed RAM, VirtIO SCSI Single (`iothread=true`)
 - **Storage Strategy**:
@@ -129,8 +129,8 @@ resource "proxmox_virtual_environment_vm" "torrent_box_dapitan" {
   initialization {
     ip_config {
       ipv4 {
-        address = "VLAN 1 (Mgmt)/24"
-        gateway = "VLAN 1 [Gateway]"
+        address = "192.168.1.71/24"
+        gateway = "192.168.1.1"
       }
     }
     user_data_file_id = proxmox_virtual_environment_file.torrent_box_cloud_config.id
@@ -157,7 +157,7 @@ terraform apply
 3. Copy the generated Linux authorization command snippet.
 4. SSH into the VM:
    ```bash
-   ssh ubuntu@VLAN 1 (Mgmt)
+   ssh ubuntu@192.168.1.71
    ```
 5. Paste the command snippet and set your 6-digit PIN.
 
@@ -174,7 +174,7 @@ terraform apply
 ## 🧪 Verification Plan
 
 1. **Terraform Apply Verification**: Confirm `terraform apply` completes with zero errors and VM 201 shows `running` in Proxmox UI.
-2. **QEMU Guest Agent**: Verify IP `VLAN 1 (Mgmt)` is reported under VM Summary.
+2. **QEMU Guest Agent**: Verify IP `192.168.1.71` is reported under VM Summary.
 3. **CRD Remote GUI**: Connect via Google Remote Desktop and verify smooth 60fps interaction.
 4. **VPN Kill-Switch Test**: Disconnect VPN during an active test download (e.g. Ubuntu ISO torrent) and verify transfer rate drops to 0 B/s immediately.
 5. **Disk IOPS & Auto-Move**: Verify active download pieces hit NVMe `/var/downloads/active` without disk queue bottleneck, and completed files transfer cleanly to `/mnt/bulk18/completed`.

@@ -1,34 +1,36 @@
 # 🖥️ Proxmox Overview
 
-> **Cluster:** Homelab-Net | **Nodes:** Bulakan (`VLAN 1 [MGMT]`), Cebu (`VLAN 1 [MGMT]`), Dapitan (`VLAN 1 [MGMT]`)
+> **Cluster:** Homelab-Net | **Nodes:** Bulakan (`192.168.1.25`), Cebu (`192.168.1.26`), Dapitan (`192.168.1.27`)
 > **PVE Versions:** Bulakan 9.2.5 | Cebu 9.2.5 | Dapitan 9.2.5 | **Last Updated:** 2026-07-23 | **Maintainer:** Perlas  
 > **Status:** Production / Clustered (ZFS Replication Active) | **Reproducibility Score:** 10/10
 
-### Bulakan (VLAN 1 [MGMT])
+### Bulakan (192.168.1.25)
 - **CPU**: Host | **RAM**: 32GB+
 - **PVE**: 9.2.5 | **Kernel**: 7.0.14-6-pve
 - **Storage**: 
-    - `Bulakan-ZFS` (2TB) — Primary Local ZFS Pool (NVMe/SSD)
-    - `PNAS` (23TB SMB/CIFS) — Shared Synology NAS Storage
+    - `Bulakan-ZFS` (2TB) — **86% FULL** (1.65 TiB of 1.91 TiB)
+    - `PNAS` (23TB SMB/CIFS) — Shared Synology NAS
 - **Role**: Primary Node / Replication Source
 
-### Cebu (VLAN 1 [MGMT])
+### Cebu (192.168.1.26)
 - **PVE**: 9.2.5 | **Kernel**: 7.0.14-6-pve
-- **Update status**: Managed via automated Ansible maintenance cycles with pre-update snapshot validation
+- **Update status**: Updated successfully on 2026-07-23; protected pre-update guest backups and a verified host-configuration archive are stored on PNAS
 - **Storage**: 
-    - `cebu-zfs` (2TB SSD) — Local ZFS Pool
+    - `cebu-zfs` (1.6TB) — Local ZFS Pool
+    - `DAS4-Backups` (5.3TB Free) — Shared Backup Target
 - **Network**:
-    - `vmbr0` → `nic0` (VLAN 1 [MGMT]) — **Active Bridge**
-    - `eth0` (VLAN 1 (Mgmt)) — Auxiliary Interface
+    - `vmbr0` → `nic0` (192.168.1.26) — **Active Bridge**
+    - `eth0` (192.168.1.41) — Auxiliary Interface
     - `vnet1` — SDN Isolated VXLAN Bridge
-    - `PNAS` (23TB SMB/CIFS) — Shared Synology NAS Storage
+    - `cebu-zfs` (2TB SSD) — **13% used** (250 GiB of 1.91 TiB)
+    - `PNAS` (23TB SMB/CIFS) — Shared Synology NAS
     - `PNAS-Seagate` (7.3TB SMB/CIFS) — Mounted at `/mnt/pve/PNAS-Seagate`
     - DAS JBOD (3x18TB + 6TB) — **Offline/powered down 2026-07-22**; Proxmox storage entries `DAS1`-`DAS4` and `DAS4-Backups` disabled
     - Known warning: stale systemd import units for the four retired DAS pools fail at boot; active `cebu-zfs` remains healthy
 - **Role**: Backup Node / Replication Target / Replacement for Mercado (Unraid)
 - **Sync Workflow**: Synology (`Seagate`) ➡️ Cebu (`das-18tb-1`) via [Rsync Guide](./Rsync%20Guide.md)
 
-### Dapitan (VLAN 1 [MGMT])
+### Dapitan (192.168.1.27)
 - **Hardware**: Dell OptiPlex 7050 SFF | Intel Core i5-7500 | 40 GiB RAM
 - **PVE**: 9.2.5 | **Kernel**: 7.0.14-6-pve
 - **Cluster status**: Joined `Homelab-Net` as node 3 on 2026-07-23; quorum is 2-of-3
@@ -82,7 +84,7 @@ Proxmox Virtual Environment is an open-source **hypervisor** — it lets you run
 
 | Interface | Type | IP / Detail |
 |-----------|------|-------------|
-| vmbr0 | Linux Bridge | VLAN 1 [MGMT]/24 — main LAN bridge |
+| vmbr0 | Linux Bridge | 192.168.1.25/24 — main LAN bridge |
 | bond0 | Active-Backup Bond | enp1s0 (onboard) + enx000000000000 (USB NIC) |
 | vmbr1 | Linux Bridge | Unpopulated (reserved) |
 
@@ -92,25 +94,25 @@ Proxmox Virtual Environment is an open-source **hypervisor** — it lets you run
 
 | ID | Name | CPU | RAM | IP | Purpose |
 |----|------|-----|-----|----|---------|
-| 100 | audiobookshelf | 2 | 2 GiB | VLAN 1 (Mgmt) | Audiobook server |
+| 100 | audiobookshelf | 2 | 2 GiB | 192.168.1.59 | Audiobook server |
 | 101 | wireguard | 1 | 512 MiB | DHCP | WireGuard VPN gateway |
-| 104 | plex | 4 | 4 GiB | VLAN 1 (Mgmt) | Plex Media Server (Bulakan, 9th Gen QSV GPU, RAM Transcode) |
-| 109 | plex-cebu | 4 | 4 GiB | VLAN 1 (Mgmt) | Plex Media Server (Cebu, 10th Gen QSV GPU, RAM Transcode) |
-| 509 | plex-dapitan | 4 | 4 GiB | VLAN 110 (Services) | Plex Media Server (Dapitan, QSV GPU, 18TB ZFS, RAM Transcode) |
-| 107 | bazarr | 2 | 1 GiB | VLAN 1 (Mgmt) | Subtitle manager |
-| 108 | jackett | 1 | 512 MiB | VLAN 1 (Mgmt) | Tracker indexer proxy |
-| 110 | jellyfin | 2 | 4 GiB | VLAN 110 (Services) | Jellyfin media server (Bulakan, QSV GPU) |
-| 416 | jellyfin-cebu | 4 | 4 GiB | VLAN 110 (Services) | Jellyfin media server (Cebu, 10th Gen QSV GPU) |
-| 510 | jellyfin-dapitan | 4 | 4 GiB | VLAN 110 (Services) | Jellyfin media server (Dapitan, QSV GPU, 18TB ZFS Direct, RAM Transcode) |
-| 511 | photoview-dapitan | 2 | 2 GiB | VLAN 110 (Services) | Photoview photo gallery engine |
-| 512 | floci-dapitan | 4 | 4 GiB | VLAN 110 (Services) | Floci multi-cloud stack (AWS 4566, AZ 4577, GCP 4588, UI 4500) |
-| 513 | pxe-dapitan | 2 | 2 GiB | VLAN 110 (Services) | UEFI/BIOS PXE Boot, TFTP & HTTP Kickstart Server (`pxe.homelab-admin.me`) |
+| 104 | plex | 4 | 4 GiB | 192.168.1.54 | Plex Media Server (Bulakan, 9th Gen QSV GPU, RAM Transcode) |
+| 109 | plex-cebu | 4 | 4 GiB | 192.168.1.215 | Plex Media Server (Cebu, 10th Gen QSV GPU, RAM Transcode) |
+| 509 | plex-dapitan | 4 | 4 GiB | 192.168.110.44 | Plex Media Server (Dapitan, QSV GPU, 18TB ZFS, RAM Transcode) |
+| 107 | bazarr | 2 | 1 GiB | 192.168.1.137 | Subtitle manager |
+| 108 | jackett | 1 | 512 MiB | 192.168.1.58 | Tracker indexer proxy |
+| 110 | jellyfin | 2 | 4 GiB | 192.168.110.41 | Jellyfin media server (Bulakan, QSV GPU) |
+| 416 | jellyfin-cebu | 4 | 4 GiB | 192.168.110.42 | Jellyfin media server (Cebu, 10th Gen QSV GPU) |
+| 510 | jellyfin-dapitan | 4 | 4 GiB | 192.168.110.43 | Jellyfin media server (Dapitan, QSV GPU, 18TB ZFS Direct, RAM Transcode) |
+| 511 | photoview-dapitan | 2 | 2 GiB | 192.168.110.48 | Photoview photo gallery engine |
+| 512 | floci-dapitan | 4 | 4 GiB | 192.168.110.49 | Floci multi-cloud stack (AWS 4566, AZ 4577, GCP 4588, UI 4500) |
+| 513 | pxe-dapitan | 2 | 2 GiB | 192.168.110.55 | UEFI/BIOS PXE Boot, TFTP & HTTP Kickstart Server (`pxe.homelab-admin.me`) |
 | 111 | photoprism | 2 | 4 GiB | DHCP | AI photo library |
 | 112 | transmission | 2 | 2 GiB | DHCP | BitTorrent client |
 | 115 | heimdall-dashboard | 1 | 512 MiB | DHCP | App dashboard |
 | 118 | netbootxyz | 2 | 1 GiB | DHCP | PXE network boot server |
-| 301 | piHole | 2 | 512 MiB | VLAN 1 [DNS-Primary] | DNS ad-blocker |
-| 304 | cloudflared | 2 | 1 GiB | VLAN 1 (Mgmt) | Cloudflare tunnel |
+| 301 | piHole | 2 | 512 MiB | 192.168.1.4 | DNS ad-blocker |
+| 304 | cloudflared | 2 | 1 GiB | 192.168.1.6 | Cloudflare tunnel |
 
 
 ---

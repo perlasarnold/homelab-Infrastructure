@@ -2,7 +2,7 @@
 
 > **Device:** UniFi Cloud Gateway Max (UCG Max)
 > **Hostname:** `Perlas-UnifiGW`
-> **Gateway IP:** `VLAN 1 [Gateway]` (Default) / `VLAN 10 (MGMT/SecOps)` (VLAN 10 MGMT)
+> **Gateway IP:** `192.168.1.1` (Default) / `192.168.10.1` (VLAN 10 MGMT)
 > **Last Documented:** 2026-07-30
 
 ---
@@ -12,8 +12,10 @@
 | Property | Value |
 |----------|-------|
 | **Model** | UniFi Cloud Gateway Max (UCG Max) |
-| **UniFi OS** | UniFi OS 5.x |
-| **Network Application** | Network 10.x |
+| **UniFi OS Version** | `5.0.16` |
+| **Network Version** | `10.3.58` |
+| **Uptime** | 5 days, 13 hours (Active) |
+| **Monthly Data Usage** | ~711 GB |
 
 ---
 
@@ -21,10 +23,10 @@
 
 | Property | Value |
 |----------|-------|
-| **ISP Interface** | Primary (WAN1) |
+| **ISP** | Spectrum (WAN1) |
 | **Connection Type** | DHCP (IPv4) |
-| **WAN IP Allocation** | Dynamic ISP / DHCP |
-| **Routing Mode** | Gateway / NAT Routing |
+| **WAN IP** | `203.0.113.10` |
+| **Status** | Active (100% Uptime, ~14ms Latency) |
 
 ---
 
@@ -34,12 +36,12 @@ The network is segmented into standardized Class C (`192.168.x.x /24`) Virtual L
 
 | Name | VLAN ID | Subnet | Gateway | DHCP Range | Purpose |
 |:-----|:--------|:-------|:--------|:-----------|:--------|
-| **Default** | 1 | `192.168.1.0/24` | `VLAN 1 [Gateway]` | `VLAN 1 (Mgmt) - 249` | Legacy Management & Native Workloads |
-| **MGMT** | 10 | `VLAN 10 (MGMT/SecOps)/24` | `VLAN 10 (MGMT/SecOps)` | `VLAN 10 (MGMT/SecOps) - 249` | Hypervisor Hosts, Switches, Storage Web GUIs |
-| **TRUSTED** | 20 | `VLAN 20 (Trusted)/24` | `VLAN 20 (Trusted)` | `VLAN 20 (Trusted) - 249` | Admin Workstations & Daily Use Devices |
+| **Default** | 1 | `192.168.1.0/24` | `192.168.1.1` | `192.168.1.100 - 249` | Legacy Management & Native Workloads |
+| **MGMT** | 10 | `192.168.10.0/24` | `192.168.10.1` | `192.168.10.200 - 249` | Hypervisor Hosts, Switches, Storage Web GUIs |
+| **TRUSTED** | 20 | `192.168.20.0/24` | `192.168.20.1` | `192.168.20.100 - 249` | Admin Workstations & Daily Use Devices |
 | **IOT** | 30 | `192.168.30.0/24` | `192.168.30.1` | `192.168.30.100 - 249` | Home Assistant, Smart TVs, Wireless Sensors |
-| **SERVICES** | 110 | `VLAN 110 (Services)/24` | `VLAN 110 (Services)` | `VLAN 110 (Services) - 249` | Internal Services (Plex, Arr Stack, Immich) |
-| **DMZ** | 120 | `VLAN 120 (DMZ)/24` | `VLAN 120 (DMZ)` | `VLAN 120 (DMZ) - 249` | Ingress Proxies & Tunnels (Cloudflared, NPM) |
+| **SERVICES** | 110 | `192.168.110.0/24` | `192.168.110.1` | `192.168.110.100 - 249` | Internal Services (Plex, Arr Stack, Immich) |
+| **DMZ** | 120 | `192.168.120.0/24` | `192.168.120.1` | `192.168.120.100 - 249` | Ingress Proxies & Tunnels (Cloudflared, NPM) |
 
 ---
 
@@ -74,9 +76,9 @@ graph TD
 ### Device Inventory
 | Device | Model | IP Address | Role | MAC Address |
 |:-------|:------|:-----------|:-----|:------------|
-| **Gateway** | UCG Max | `VLAN 1 [Gateway]` / `VLAN 10 (MGMT/SecOps)` | Core Router | `00:11:22:33:44:55` |
-| **Switch** | USW Pro Max 16 | `VLAN 1 (Mgmt)` / `VLAN 10 (MGMT/SecOps)` | Core Switch | `00:11:22:33:44:55` |
-| **Access Point** | U7 Pro | `VLAN 1 (Mgmt)` / `VLAN 10 (MGMT/SecOps)` | WiFi 7 AP | `00:11:22:33:44:55` |
+| **Gateway** | UCG Max | `192.168.1.1` / `192.168.10.1` | Core Router | `00:11:22:33:44:55` |
+| **Switch** | USW Pro Max 16 | `192.168.1.141` / `192.168.10.141` | Core Switch | `00:11:22:33:44:55` |
+| **Access Point** | U7 Pro | `192.168.1.124` / `192.168.10.124` | WiFi 7 AP | `00:11:22:33:44:55` |
 
 ---
 
@@ -105,8 +107,8 @@ graph TD
 The network uses local Pi-Hole instances for ad-blocking and DNS resolution:
 | Resolver | IP Address | Subnet / Location | Notes |
 |:---------|:-----------|:------------------|:------|
-| **Primary DNS** | `VLAN 1 [DNS-Secondary]` / `VLAN 110 (Services)` | Bulakan (CT 301) | Primary DNS Sinkhole |
-| **Secondary DNS** | `VLAN 1 (Mgmt)` / `VLAN 110 (Services)` | Cebu (CT 401) | Secondary DNS Sinkhole |
+| **Primary DNS** | `192.168.1.5` / `192.168.110.5` | Bulakan (CT 301) | Primary DNS Sinkhole |
+| **Secondary DNS** | `192.168.1.43` / `192.168.110.6` | Cebu (CT 401) | Secondary DNS Sinkhole |
 
 ### VPN
 - **WireGuard:** Enabled (One-Click VPN). Active for remote management.
@@ -116,7 +118,7 @@ The network uses local Pi-Hole instances for ad-blocking and DNS resolution:
 |:-----|:-----|:----------|:------|
 | **Bulakan-Plex** | 32400 | `192.168.1.x` | External Plex Access |
 | **Luzon-Plex** | 32400 | `192.168.1.x` | Secondary Plex Access |
-| **unRAID-Jellyfin** | 8096 | `VLAN 1 (Mgmt)` | Legacy Jellyfin access |
+| **unRAID-Jellyfin** | 8096 | `192.168.1.126` | Legacy Jellyfin access |
 
 ---
 

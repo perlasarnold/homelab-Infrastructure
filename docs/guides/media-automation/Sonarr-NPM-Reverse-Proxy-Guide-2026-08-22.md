@@ -1,7 +1,7 @@
 # 🎬 Sonarr Reverse Proxy & Wildcard SSL Configuration Guide
 
 - **Date:** August 22, 2026
-- **Objective:** Resolve the default "Nginx Proxy Manager - Host not setup yet" landing page when accessing `sonarr.homelab-admin.me` by deploying reverse proxy routing, Wildcard SSL termination (`*.homelab-admin.me`), and security headers to upstream Sonarr running on Cebu CT 417 (`VLAN 110 (Services):8989`).
+- **Objective:** Resolve the default "Nginx Proxy Manager - Host not setup yet" landing page when accessing `sonarr.homelab-admin.me` by deploying reverse proxy routing, Wildcard SSL termination (`*.homelab-admin.me`), and security headers to upstream Sonarr running on Cebu CT 417 (`192.168.110.42:8989`).
 - **Maintainer:** Perlas
 
 ---
@@ -13,9 +13,9 @@ Accessing `http://sonarr.homelab-admin.me` in the browser yielded the default NP
 > *"Congratulations! You've successfully started the Nginx Proxy Manager. If you're seeing this site then you're trying to access a host that isn't set up yet."*
 
 ### Root Cause
-1. DNS resolution was successfully routing requests for `sonarr.homelab-admin.me` to the primary Nginx Proxy Manager LXC container (Cebu CT 105 at `VLAN 120 (DMZ)`).
+1. DNS resolution was successfully routing requests for `sonarr.homelab-admin.me` to the primary Nginx Proxy Manager LXC container (Cebu CT 105 at `192.168.120.211`).
 2. NPM had no proxy host definition or Nginx server block mapped to the domain `sonarr.homelab-admin.me`.
-3. Upstream Sonarr service was actively listening on Cebu Arr Stack CT 417 (`VLAN 110 (Services):8989`).
+3. Upstream Sonarr service was actively listening on Cebu Arr Stack CT 417 (`192.168.110.42:8989`).
 
 ---
 
@@ -24,7 +24,7 @@ Accessing `http://sonarr.homelab-admin.me` in the browser yielded the default NP
 ### 1. Database & Proxy Host Deployment
 A new Proxy Host definition (ID `15`) was configured and synchronized in the SQLite database (`/data/database.sqlite`) on Cebu CT 105:
 - **Domain:** `sonarr.homelab-admin.me`
-- **Forward Scheme / IP / Port:** `http://VLAN 110 (Services):8989`
+- **Forward Scheme / IP / Port:** `http://192.168.110.42:8989`
 - **SSL Certificate ID:** `3` (`*.homelab-admin.me`, `homelab-admin.me`)
 - **Toggles:** Force SSL, HTTP/2 Support, HSTS Enabled (`max-age=63072000; preload`), Websocket Upgrades, Exploit Blocking.
 
@@ -41,7 +41,7 @@ map $scheme $hsts_header {
 
 server {
   set $forward_scheme http;
-  set $server         "VLAN 110 (Services)";
+  set $server         "192.168.110.42";
   set $port           8989;
 
   listen 80;

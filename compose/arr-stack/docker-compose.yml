@@ -22,7 +22,7 @@ services:
       - WIREGUARD_ENDPOINT_PORT=51820
       - DOT=off
       - DNS_PLAINTEXT_ADDRESS=1.1.1.1
-      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,VLAN 110 (Services)/24,VLAN 120 (DMZ)/24
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,192.168.110.0/24,192.168.120.0/24
       - TZ=America/Los_Angeles
     restart: always
 

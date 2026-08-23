@@ -7,7 +7,7 @@
 
 | Layer | Path |
 |---|---|
-| Synology SMB source | `//VLAN 1 [MGMT-NAS]/Media/Ebooks` |
+| Synology SMB source | `//192.168.1.12/Media/Ebooks` |
 | Bulakan host | `/mnt/ebooks` |
 | Calibre-Web LXC 113 | `/books` |
 | Calibre library database | `/books/Calibre/metadata.db` |
@@ -23,7 +23,7 @@
 4. Added the persistent host mount to `/etc/fstab`:
 
    ```fstab
-   //VLAN 1 [MGMT-NAS]/Media/Ebooks /mnt/ebooks cifs credentials=/root/.pnascredentials,iocharset=utf8,vers=3.0,uid=100000,gid=100000,file_mode=0664,dir_mode=0775,noperm,nobrl,_netdev,nofail,x-systemd.automount 0 0
+   //192.168.1.12/Media/Ebooks /mnt/ebooks cifs credentials=/root/.pnascredentials,iocharset=utf8,vers=3.0,uid=100000,gid=100000,file_mode=0664,dir_mode=0775,noperm,nobrl,_netdev,nofail,x-systemd.automount 0 0
    ```
 
    - `_netdev`, `nofail`, and `x-systemd.automount` make the network mount resilient when the NAS is unavailable during early boot.
@@ -39,7 +39,7 @@
 
 ## Outcome
 
-- Host mount active: `//VLAN 1 [MGMT-NAS]/Media/Ebooks` at `/mnt/ebooks`.
+- Host mount active: `//192.168.1.12/Media/Ebooks` at `/mnt/ebooks`.
 - Container mount active at `/books`.
 - Calibre library database found at `/books/Calibre/metadata.db`.
 - Active catalog contains 745 books and 822 format records.

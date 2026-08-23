@@ -6,7 +6,7 @@
 ###############################################################################
 
 param(
-    [string]$ProxmoxHost = "VLAN 1 [MGMT]",
+    [string]$ProxmoxHost = "192.168.1.25",
     [string]$TemplateName = "debian-12-standard"
 )
 

@@ -19,7 +19,7 @@ We will create a VXLAN overlay that bridges the two nodes over your physical net
 2. Click **Add** -> **VXLAN**.
 3. Fill out the details:
    - **ID:** `local-inter-node`
-   - **Peers:** Enter both of your local LAN IPs separated by a comma (e.g., `VLAN 1 [MGMT], 192.168.1.XX` where XX is Bulakan's IP).
+   - **Peers:** Enter both of your local LAN IPs separated by a comma (e.g., `192.168.1.26, 192.168.1.XX` where XX is Bulakan's IP).
 4. Click **Create**.
 
 *(Note: We leave MTU empty/default since there is no VPN overhead to worry about on a local LAN).*

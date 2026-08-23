@@ -113,7 +113,7 @@ setup_proxmox_api() {
   echo ""
   ask "Proxmox API Token ID (e.g., root@pam!terraform):" PROXMOX_TOKEN_ID
   askpw "Proxmox API Token Secret:" PROXMOX_TOKEN_SECRET
-  ask "Proxmox host name/IP (e.g., VLAN 1 (Mgmt)):" PROXMOX_HOST
+  ask "Proxmox host name/IP (e.g., 192.168.1.10):" PROXMOX_HOST
   ask "Proxmox node name (e.g., pve):" PROXMOX_NODE
 
   # Store for the runner's environment

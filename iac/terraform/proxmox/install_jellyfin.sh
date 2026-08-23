@@ -1,7 +1,7 @@
 #!/bin/bash
 ip link set eth0 up
-ip addr add VLAN 1 (Mgmt)/24 dev eth0
-ip route add default via VLAN 1 [Gateway]
+ip addr add 192.168.1.41/24 dev eth0
+ip route add default via 192.168.1.1
 echo "nameserver 1.1.1.1" > /etc/resolv.conf
 
 apt-get update

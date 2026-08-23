@@ -50,7 +50,7 @@ Before Terraform can create containers, Proxmox needs an **LXC template** — th
 
 ### Step 2.1: Check Available Templates
 
-1. **Open Proxmox Web UI:** https://VLAN 1 [MGMT]:8006
+1. **Open Proxmox Web UI:** https://192.168.1.25:8006
 2. **Login** with your credentials
 3. **Look at the left sidebar:** See the storage list
 
@@ -85,7 +85,7 @@ From your PC's terminal:
 
 ```bash
 # SSH into Proxmox
-ssh root@VLAN 1 [MGMT]
+ssh root@192.168.1.25
 
 # Update template database
 pveam update
@@ -109,7 +109,7 @@ ls -lh /var/lib/vz/template/cache/
 **Important:** The exact filename matters. Check it:
 
 ```bash
-ssh root@VLAN 1 [MGMT] ls -la /var/lib/vz/template/cache/
+ssh root@192.168.1.25 ls -la /var/lib/vz/template/cache/
 ```
 
 You'll see something like:
@@ -211,7 +211,7 @@ Plan: 1 to add, 0 to change, 0 to destroy.
 4. Proxmox:
    - Creates CT 118
    - Extracts Debian template
-   - Configures network (VLAN 1 (Mgmt))
+   - Configures network (192.168.1.54)
    - Sets CPU (2 cores), RAM (1GB), disk (16GB)
 5. Terraform saves state to `.tfstate` file
 
@@ -233,7 +233,7 @@ Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 4. **Should see:** A running Debian container with hostname `netbootxyz`
 5. **Try pinging it:**
    ```powershell
-   ping VLAN 1 (Mgmt)
+   ping 192.168.1.54
    # Should reply!
    ```
 
@@ -279,7 +279,7 @@ hostname  # Should show: netbootxyz
 **Option C: Direct SSH (after setup)**
 
 ```bash
-ssh root@VLAN 1 (Mgmt)
+ssh root@192.168.1.54
 ```
 
 ### Step 4.3: Install Netboot.xyz
@@ -328,7 +328,7 @@ curl http://localhost:3000
 
 ### Step 4.5: Access Web UI from Your PC
 
-1. **Open browser:** http://VLAN 1 (Mgmt):3000
+1. **Open browser:** http://192.168.1.54:3000
 2. **Should see:** Netboot.xyz Web UI
 
 **If it doesn't load:**
@@ -347,10 +347,10 @@ Now for the cool part — making other computers boot from this.
 ┌──────────────┐                     ┌──────────────┐
 │  Client PC   │      Step 1:        │   Your PC    │
 │  (blank/new) │   ┌──────────────►  │  (netboot)   │
-│              │   │  "I need OS!"   │  VLAN 1 (Mgmt)│
+│              │   │  "I need OS!"   │  192.168.1.54│
 └──────────────┘   │                  └──────────────┘
       ▲            │
-      │            │ Step 2: "DHCP says TFTP is at VLAN 1 (Mgmt)"
+      │            │ Step 2: "DHCP says TFTP is at 192.168.1.54"
       │            │
       └────────────┤ Step 3: Downloads boot files via TFTP
                    │ Step 4: Boots menu, loads ISO over HTTP
@@ -363,20 +363,20 @@ Your DHCP server (usually router or Pi-hole) needs to tell clients about the PXE
 
 #### Option A: Pi-hole DHCP (You have CT 301!)
 
-1. **Login to Pi-hole:** http://VLAN 1 (Mgmt)/admin (or check CT 301's IP)
+1. **Login to Pi-hole:** http://192.168.1.3/admin (or check CT 301's IP)
 2. **Settings** → **DHCP** tab
 3. **Enable DHCP server** if not already enabled
 4. **Find "PXE/TFTP Server" settings:**
-   - **TFTP Server:** `VLAN 1 (Mgmt)`
+   - **TFTP Server:** `192.168.1.54`
    - **Boot File:** `netboot.xyz.kpxe` (for BIOS) or `netboot.xyz.efi` (for UEFI)
 5. **Save settings**
 
-**Why this works:** When a PXE client boots, it asks DHCP: "Who's the TFTP server?" Pi-hole replies: "VLAN 1 (Mgmt)" and the client downloads the boot files.
+**Why this works:** When a PXE client boots, it asks DHCP: "Who's the TFTP server?" Pi-hole replies: "192.168.1.54" and the client downloads the boot files.
 
 #### Option B: Router DHCP
 
 Every router is different, but look for:
-- **Boot Server** or **TFTP Server:** `VLAN 1 (Mgmt)`
+- **Boot Server** or **TFTP Server:** `192.168.1.54`
 - **Network Boot Filename:** `netboot.xyz.kpxe`
 - **DHCP Options:** 66 (TFTP server), 67 (bootfile)
 
@@ -432,7 +432,7 @@ Find a spare computer or VM:
 
 ## Phase 6: Configure Netboot.xyz
 
-The Web UI (http://VLAN 1 (Mgmt):3000) lets you:
+The Web UI (http://192.168.1.54:3000) lets you:
 
 ### Step 6.1: Enable Local Asset Caching
 

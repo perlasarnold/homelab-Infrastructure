@@ -2,7 +2,7 @@
 # GUI Torrent Box — Dapitan Node (Proxmox VE LXC)
 # CT ID: 501 | Hostname: torrent-box-dapitan
 # OS: Ubuntu 24.04 LTS + XFCE4 Desktop + Google Remote Desktop (CRD)
-# IP: VLAN 1 (Mgmt)/24
+# IP: 192.168.1.71/24
 # Date: 2026-07-24
 ###############################################################################
 
@@ -32,8 +32,8 @@ resource "proxmox_virtual_environment_container" "torrent_box_dapitan" {
 
     ip_config {
       ipv4 {
-        address = "VLAN 1 (Mgmt)/24"
-        gateway = "VLAN 1 [Gateway]"
+        address = "192.168.1.71/24"
+        gateway = "192.168.1.1"
       }
     }
   }

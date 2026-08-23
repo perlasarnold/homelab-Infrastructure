@@ -27,12 +27,12 @@ output "stopped_containers" {
 output "service_urls" {
   description = "Local URLs for services running on Mercado"
   value = {
-    jellyfin            = "http://VLAN 1 (Mgmt):8096"
-    plex                = "http://VLAN 1 (Mgmt):32400/web"
-    heimdall            = "http://VLAN 1 (Mgmt):8088"
-    nginx_proxy_manager = "http://VLAN 1 (Mgmt):7818"
-    audiobookshelf      = "http://VLAN 1 (Mgmt):13378"
-    pihole              = "http://VLAN 1 (Mgmt)/admin"
-    mariadb             = "mysql://VLAN 1 (Mgmt):3306"
+    jellyfin            = "http://192.168.1.24:8096"
+    plex                = "http://192.168.1.24:32400/web"
+    heimdall            = "http://192.168.1.24:8088"
+    nginx_proxy_manager = "http://192.168.1.24:7818"
+    audiobookshelf      = "http://192.168.1.24:13378"
+    pihole              = "http://192.168.1.3/admin"
+    mariadb             = "mysql://192.168.1.24:3306"
   }
 }

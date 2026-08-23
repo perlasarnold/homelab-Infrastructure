@@ -1,7 +1,7 @@
 # Cebu Network Driver Hang Troubleshooting
 
 - **Date:** 2026-05-24
-- **Objective:** Resolve unexpected network connectivity loss on the Proxmox Cebu hypervisor node (`VLAN 1 [MGMT]`).
+- **Objective:** Resolve unexpected network connectivity loss on the Proxmox Cebu hypervisor node (`192.168.1.26`).
 
 ---
 

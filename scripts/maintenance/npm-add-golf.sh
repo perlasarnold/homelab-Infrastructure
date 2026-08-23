@@ -1,12 +1,12 @@
 #!/bin/bash
 cat << 'EOF' > /data/nginx/proxy_host/golf_homelab-admin.conf
 # ------------------------------------------------------------
-# golf.homelab-admin.me -> Golf Swing Analyzer (VLAN 110 (Services):8086)
+# golf.homelab-admin.me -> Golf Swing Analyzer (192.168.110.51:8086)
 # ------------------------------------------------------------
 
 server {
   set $forward_scheme http;
-  set $server         "VLAN 110 (Services)";
+  set $server         "192.168.110.51";
   set $port           8086;
 
   listen 80;
@@ -44,7 +44,7 @@ server {
     proxy_set_header X-Forwarded-Proto  $scheme;
     proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
     proxy_set_header X-Real-IP          $remote_addr;
-    proxy_pass       http://VLAN 110 (Services):8086;
+    proxy_pass       http://192.168.110.51:8086;
   }
 }
 EOF

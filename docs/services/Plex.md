@@ -9,9 +9,9 @@ Plex Media Server is deployed across multiple Proxmox LXC nodes in the homelab t
 
 | Node | Host CPU & GPU | CT ID | IP Address | Transcode Engine | Storage Backing |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| **Bulakan (Primary)** | Intel i5-9500T (UHD 630) | `104` | `VLAN 1 (Mgmt):32400` | Intel QSV + `/dev/shm` (16GB RAM) | Synology NAS (`PNAS`) SMB `/mnt/plex` & `/mnt/plex1` |
-| **Cebu (High Perf)** | Intel i5-10500T (UHD 630) | `109` | `VLAN 1 (Mgmt):32400` | Intel QSV + `/dev/shm` (16GB RAM) | Synology NAS (`PNAS`) SMB `/mnt/plex` & `/mnt/plex1` |
-| **Dapitan (DR & Direct)**| Intel i5-7500 (HD 630) | `509` | `VLAN 110 (Services):32400` | Intel QSV + `/dev/shm` (20GB RAM) | ⚡ Direct-Attached 18TB SATA ZFS (`bulk18`, recordsize=1M) |
+| **Bulakan (Primary)** | Intel i5-9500T (UHD 630) | `104` | `192.168.1.54:32400` | Intel QSV + `/dev/shm` (16GB RAM) | Synology NAS (`PNAS`) SMB `/mnt/plex` & `/mnt/plex1` |
+| **Cebu (High Perf)** | Intel i5-10500T (UHD 630) | `109` | `192.168.1.215:32400` | Intel QSV + `/dev/shm` (16GB RAM) | Synology NAS (`PNAS`) SMB `/mnt/plex` & `/mnt/plex1` |
+| **Dapitan (DR & Direct)**| Intel i5-7500 (HD 630) | `509` | `192.168.110.44:32400` | Intel QSV + `/dev/shm` (20GB RAM) | ⚡ Direct-Attached 18TB SATA ZFS (`bulk18`, recordsize=1M) |
 
 ---
 

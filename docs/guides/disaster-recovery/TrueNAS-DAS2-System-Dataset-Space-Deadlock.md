@@ -8,7 +8,7 @@
 
 ## 1. Problem Statement
 
-The TrueNAS SCALE (VM 120) SMB service (`smbd`) stopped responding to connection requests. Windows client connection attempts to the share `\\VLAN 1 (Mgmt)\photo` failed with network path/access errors.
+The TrueNAS SCALE (VM 120) SMB service (`smbd`) stopped responding to connection requests. Windows client connection attempts to the share `\\192.168.1.211\photo` failed with network path/access errors.
 
 ---
 
@@ -106,7 +106,7 @@ Additionally, we ran a Python utility inside the guest to convert any carriage r
 2. **Samba Stabilized**: No further `smbd` crashes or systemd core dumps are occurring.
 3. **SMB Connectivity Restored**: Validated that clients can connect and browse the share from Windows Powershell:
    ```powershell
-   Get-ChildItem \\VLAN 1 (Mgmt)\photo
+   Get-ChildItem \\192.168.1.211\photo
    ```
    **Output:** Successful listing of `#recycle`, `#snapshot`, `Edits`, `Immich`, etc.
 4. **Duplication Path Blocked**: Active replication sync tasks are now configured to exclude snapshot and recycle directories, protecting against future pool saturation. Both sync cron tasks are currently disabled to ensure no automated actions run during pool recovery.

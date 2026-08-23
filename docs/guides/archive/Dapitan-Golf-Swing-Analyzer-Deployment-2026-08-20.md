@@ -1,7 +1,7 @@
 # ⛳ Golf Swing Analyzer Container Deployment & Immich Integration Guide (Dapitan Node)
 
 - **Date:** August 20, 2026
-- **Objective:** Provision a persistent, web-enabled containerized instance of **`greggjuri/golf-swing-analyzer`** on Proxmox node **Dapitan** (`VLAN 1 [MGMT]`) with mass storage on ZFS pool `bulk18`, direct **Immich media library read-only mounts**, HTML5 noVNC streaming interface, HTTPS SSL reverse proxying via Nginx Proxy Manager (`VLAN 120 (DMZ)`), and Single Sign-On authentication via Authentik (`https://auth.homelab-admin.me`).
+- **Objective:** Provision a persistent, web-enabled containerized instance of **`greggjuri/golf-swing-analyzer`** on Proxmox node **Dapitan** (`192.168.1.27`) with mass storage on ZFS pool `bulk18`, direct **Immich media library read-only mounts**, HTML5 noVNC streaming interface, HTTPS SSL reverse proxying via Nginx Proxy Manager (`192.168.120.211`), and Single Sign-On authentication via Authentik (`https://auth.homelab-admin.me`).
 - **Outcome:** Successfully containerized with multi-stage Docker build, persistent ZFS dataset mounts (`bulk18/golf-analyzer-data`), read-only Immich mobile video dataset mounts (`/app/data/immich:ro`), zero-install HTML5 browser access via noVNC (port `8086`), and zero-trust SSO protection at `https://golf.homelab-admin.me`.
 
 ---
@@ -10,15 +10,15 @@
 
 | Component | Node / Location | IP / Port | Function & Configuration |
 | :--- | :--- | :--- | :--- |
-| **Proxmox Node** | `Dapitan` | `VLAN 1 [MGMT]` | Proxmox VE host running ZFS pool `bulk18` & `vm-fast` |
-| **LXC Guest (CT 513)** | `golf-analyzer-dapitan` | `VLAN 110 (Services)` | Privileged Ubuntu 22.04 LXC (`nesting=1,keyctl=1`, 4 vCPU, 4GB RAM) |
+| **Proxmox Node** | `Dapitan` | `192.168.1.27` | Proxmox VE host running ZFS pool `bulk18` & `vm-fast` |
+| **LXC Guest (CT 513)** | `golf-analyzer-dapitan` | `192.168.110.51` | Privileged Ubuntu 22.04 LXC (`nesting=1,keyctl=1`, 4 vCPU, 4GB RAM) |
 | **ZFS Mass Storage** | `bulk18/golf-analyzer-data` | `/mnt/bindmounts/golf-analyzer-data` | Host ZFS dataset (`recordsize=128k`, `zstd`) mounted into CT 513 |
 | **Immich Media Mount** | `bulk18/immich-data` | `/mnt/bindmounts/immich-data` | Read-only host ZFS dataset mounted to `/app/data/immich:ro` |
 | **GUI & Processing Engine** | CT 513 Docker | Port `8086` | Python 3.10+, OpenCV, MediaPipe, PyQt5 application |
 | **Display Server & Web Streamer** | CT 513 Docker | Port `8086` | Xvfb (`:99`), fluxbox WM, x11vnc (`:5900`), websockify / noVNC |
-| **Pi-hole Local DNS** | Bulakan (`CT 301`) | `VLAN 1 [DNS-Primary]` | Maps `golf.homelab-admin.me` to NPM (`VLAN 120 (DMZ)`) |
-| **Nginx Proxy Manager** | Cebu (`CT 105`) | `VLAN 120 (DMZ)` | Reverse proxy & SSL termination (`*.homelab-admin.me`) |
-| **Authentik IdP** | Cebu (`CT 103`) | `VLAN 110 (Services):9000` | Forward Auth Proxy Outpost for Single Sign-On |
+| **Pi-hole Local DNS** | Bulakan (`CT 301`) | `192.168.1.4` | Maps `golf.homelab-admin.me` to NPM (`192.168.120.211`) |
+| **Nginx Proxy Manager** | Cebu (`CT 105`) | `192.168.120.211` | Reverse proxy & SSL termination (`*.homelab-admin.me`) |
+| **Authentik IdP** | Cebu (`CT 103`) | `192.168.110.225:9000` | Forward Auth Proxy Outpost for Single Sign-On |
 
 ---
 

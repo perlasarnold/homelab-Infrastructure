@@ -15,12 +15,12 @@ flowchart TD
         SurfsharkVPN["🛡️ Surfshark VPN Server (WireGuard)\n198.51.100.10:51820"]
     end
 
-    subgraph "Cebu Proxmox Node (VLAN 1 [MGMT])"
-        subgraph "CT 105: Nginx Proxy Manager (VLAN 120 (DMZ))"
+    subgraph "Cebu Proxmox Node (192.168.1.26)"
+        subgraph "CT 105: Nginx Proxy Manager (192.168.120.211)"
             NPM["Nginx Reverse Proxy\n(sonarr.homelab-admin.me)\nForce SSL + HTTP/2 + HSTS"]
         end
 
-        subgraph "CT 417: Arr Stack (VLAN 110 (Services))"
+        subgraph "CT 417: Arr Stack (192.168.110.42)"
             subgraph "Gluetun VPN Namespace (Kill Switch)"
                 Gluetun["Gluetun Container\n(WireGuard Tunnel)\nPublic IP: 198.51.100.25"]
                 Transmission["Transmission (9091)\n(Downloads exclusively over VPN)"]
@@ -29,10 +29,10 @@ flowchart TD
             Sonarr["Sonarr (8989)\n(TV Show Management)"]
         end
 
-        HostMount["Host Mount (/mnt/plex1/Share)\n//VLAN 1 [MGMT-NAS]/Seagate"]
+        HostMount["Host Mount (/mnt/plex1/Share)\n//192.168.1.12/Seagate"]
     end
 
-    subgraph "Synology NAS (VLAN 1 [MGMT-NAS])"
+    subgraph "Synology NAS (192.168.1.12)"
         NAS_Downloads["\\pnas\Seagate\Share\Downloads"]
         NAS_TV["\\pnas\Seagate\Share\TV Shows"]
     end
@@ -69,7 +69,7 @@ flowchart TD
 Accessing `sonarr.homelab-admin.me` loaded the default Nginx Proxy Manager splash screen (*"Congratulations! You've successfully started Nginx Proxy Manager... host isn't set up yet"*).
 
 ### Root Cause
-DNS was successfully pointing `sonarr.homelab-admin.me` to NPM on Cebu CT 105 (`VLAN 120 (DMZ)`), but NPM did not have a **Proxy Host** entry or server configuration file for that domain.
+DNS was successfully pointing `sonarr.homelab-admin.me` to NPM on Cebu CT 105 (`192.168.120.211`), but NPM did not have a **Proxy Host** entry or server configuration file for that domain.
 
 ### Step-by-Step Resolution
 
@@ -81,7 +81,7 @@ DNS was successfully pointing `sonarr.homelab-admin.me` to NPM on Cebu CT 105 (`
 
    server {
      set $forward_scheme http;
-     set $server         "VLAN 110 (Services)";
+     set $server         "192.168.110.42";
      set $port           8989;
 
      listen 80;
@@ -135,19 +135,19 @@ Sonarr displayed 4 critical health check errors:
 4. `All search-capable indexers are temporarily unavailable due to recent indexer errors`
 
 ### Root Cause
-- When the Arr stack container was migrated to **SERVICES VLAN 110** (`VLAN 110 (Services)`), Prowlarr application sync and Sonarr's indexer database entries were still hardcoded to the old IP (`VLAN 1 (Mgmt):9696`).
+- When the Arr stack container was migrated to **SERVICES VLAN 110** (`192.168.110.42`), Prowlarr application sync and Sonarr's indexer database entries were still hardcoded to the old IP (`192.168.1.42:9696`).
 - Sonarr could not reach Prowlarr to query indexers, disabling all indexers.
 - No download client was registered in Sonarr.
 
 ### Step-by-Step Resolution
 
 1. **Update Prowlarr Application Mappings:**
-   Updated Prowlarr's database (`prowlarr.db`) to point Sonarr and Radarr to `VLAN 110 (Services)`.
+   Updated Prowlarr's database (`prowlarr.db`) to point Sonarr and Radarr to `192.168.110.42`.
 2. **Update Sonarr Indexers Base URL:**
-   Updated Sonarr's database (`sonarr.db`) `Indexers` table to `http://VLAN 110 (Services):9696/1/`.
+   Updated Sonarr's database (`sonarr.db`) `Indexers` table to `http://192.168.110.42:9696/1/`.
 3. **Register Transmission Download Client:**
    Added Transmission via Sonarr's REST API (`POST /api/v3/downloadclient`):
-   - **Host:** `VLAN 110 (Services)`
+   - **Host:** `192.168.110.42`
    - **Port:** `9091`
    - **URL Base:** `/transmission/`
    - **Category:** `tv-sonarr`
@@ -236,7 +236,7 @@ Switch Gluetun from OpenVPN to **WireGuard** and guarantee that Transmission can
        - WIREGUARD_ENDPOINT_PORT=51820
        - DOT=off
        - DNS_PLAINTEXT_ADDRESS=1.1.1.1
-       - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,VLAN 110 (Services)/24,VLAN 120 (DMZ)/24
+       - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,192.168.110.0/24,192.168.120.0/24
        - TZ=America/Los_Angeles
      restart: always
    ```

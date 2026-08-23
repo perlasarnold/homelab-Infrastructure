@@ -2,7 +2,7 @@
 
 - **Date:** 2026-07-22
 - **Objective:** Plan storage for a new Dell OptiPlex SFF Proxmox host using one NVMe SSD for Proxmox VE, one 1 TB SSD for VM/LXC disks, and one 18 TB HDD shared directly with Plex, Jellyfin, Immich, and the Arr/download stack without TrueNAS.
-- **Status:** Implementation in progress on `Dapitan` (`VLAN 1 [MGMT]`). Base storage was created and verified on 2026-07-22, and Dapitan joined the three-node `Homelab-Net` cluster on 2026-07-23. Extended disk tests, BIOS update, permissions, workload deployment, and data migration remain pending.
+- **Status:** Implementation in progress on `Dapitan` (`192.168.1.27`). Base storage was created and verified on 2026-07-22, and Dapitan joined the three-node `Homelab-Net` cluster on 2026-07-23. Extended disk tests, BIOS update, permissions, workload deployment, and data migration remain pending.
 
 ## Dapitan Implementation Record
 
@@ -15,7 +15,7 @@
 | Memory | 40 GiB | 37 GiB available at idle |
 | Integrated GPU | Intel HD Graphics 630 | `i915` loaded; preferred for media transcoding |
 | Discrete GPU | NVIDIA GeForce GT 1030 | `nouveau` loaded; no NVENC encoder |
-| Network | Intel I219-LM | `e1000e`; bridge `vmbr0`; static IP `VLAN 1 [MGMT]/24` |
+| Network | Intel I219-LM | `e1000e`; bridge `vmbr0`; static IP `192.168.1.27/24` |
 | OS disk | Samsung PM961 NVMe 256 GB | Serial `S364NX0J619690`; SMART passed; 3% used |
 | VM/LXC SSD | Samsung 870 QVO 1 TB | Serial `S5VSNJ0R409313V`; SMART passed; 25,294 hours; extended test pending |
 | Bulk HDD | Seagate IronWolf Pro 18 TB | Serial `ZVTFEZ44`; SMART passed; 14,685 hours; extended test pending |
@@ -109,7 +109,7 @@ Read-only checks were completed on 2026-07-23 before attempting to add Dapitan t
 
 | Check | Result |
 |---|---|
-| Existing cluster before join | `Homelab-Net`, nodes `Bulakan` (`VLAN 1 [MGMT]`) and `cebu` (`VLAN 1 [MGMT]`) |
+| Existing cluster before join | `Homelab-Net`, nodes `Bulakan` (`192.168.1.25`) and `cebu` (`192.168.1.26`) |
 | Final cluster health | Quorate; three of three expected votes online, with quorum of two |
 | Bulakan version | PVE manager `9.2.5`, kernel `7.0.14-6-pve` |
 | Cebu version | PVE manager `9.2.5`, kernel `7.0.14-6-pve` |
@@ -138,7 +138,7 @@ Completed continuation sequence:
 2. Upgraded and validated Bulakan at PVE 9.2.5.
 3. Updated and validated Cebu at PVE 9.2.5.
 4. Created verified pre-join Dapitan and Homelab-Net rollback archives.
-5. Joined Dapitan to `VLAN 1 [MGMT]`.
+5. Joined Dapitan to `192.168.1.25`.
 6. Restored `vm-fast` as Dapitan-only storage and added Dapitan to PNAS.
 7. Verified three-node quorum, certificates, ZFS pools, mounts, services,
    and the unchanged Bulakan/Cebu guest states.
@@ -166,7 +166,7 @@ Final cluster definition:
 ```text
 cifs: PNAS
         path /mnt/pve/PNAS
-        server VLAN 1 [MGMT-NAS]
+        server 192.168.1.12
         share proxmox
         content snippets,iso,rootdir,vztmpl,images,backup
         nodes cebu,Bulakan,Dapitan
@@ -176,7 +176,7 @@ cifs: PNAS
 
 Implementation and verification:
 
-- Dapitan can reach `VLAN 1 [MGMT-NAS]` on TCP port 445.
+- Dapitan can reach `192.168.1.12` on TCP port 445.
 - `cifs-utils` is already installed.
 - The existing Synology account `proxmox` was reused. Its current password was entered locally on Dapitan so it was never exposed in chat or shell history.
 - `PNAS` is active at `/mnt/pve/PNAS` over SMB 3.1.1 with read/write mount options.

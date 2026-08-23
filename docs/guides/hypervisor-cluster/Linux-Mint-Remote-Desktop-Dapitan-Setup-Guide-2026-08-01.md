@@ -2,16 +2,16 @@
 
 - **Date:** August 1, 2026
 - **Objective:** Design, allocate, and document the deployment of a high-performance **Linux Mint 22 Desktop VM** on Proxmox node **Dapitan** (128GB disk on `vm-fast` pool), configured with **VLAN 20 (TRUSTED)** network placement, **Apache Guacamole** HTML5 streaming, and **Authentik MFA** for zero-trust remote browser access (self-hosted Google Remote Desktop replacement).
-- **Target Host:** Proxmox VE Node 3 `Dapitan` (`VLAN 1 [MGMT]` / `VLAN 10 (MGMT/SecOps)`)
+- **Target Host:** Proxmox VE Node 3 `Dapitan` (`192.168.1.27` / `192.168.10.27`)
 - **Status:** Architecture Approved / Ready for Deployment
 
 ---
 
 ## 🌐 Network VLAN Assignment & Security Strategy
 
-### Recommended VLAN: **VLAN 20 — TRUSTED (`VLAN 20 (Trusted)/24`)**
-- **Recommended Static IP:** `VLAN 20 (Trusted)` *(or `VLAN 1 (Mgmt)` during flat-network transition)*
-- **Gateway:** `VLAN 20 (Trusted)` (UniFi Cloud Gateway Max)
+### Recommended VLAN: **VLAN 20 — TRUSTED (`192.168.20.0/24`)**
+- **Recommended Static IP:** `192.168.20.70` *(or `192.168.1.70` during flat-network transition)*
+- **Gateway:** `192.168.20.1` (UniFi Cloud Gateway Max)
 
 ### Architectural Rationale:
 
@@ -40,7 +40,7 @@
 ```
 
 #### Why VLAN 20 (TRUSTED)?
-1. **Administrative Jump Host Capability:** Once connected to the Linux Mint desktop via Guacamole, you need the capability to manage Proxmox VE nodes (`192.168.10.x`), Synology/TrueNAS interfaces (`VLAN 10 (MGMT/SecOps)`), and service containers (`192.168.110.x`). VLAN 20 is designated for trusted admin endpoints.
+1. **Administrative Jump Host Capability:** Once connected to the Linux Mint desktop via Guacamole, you need the capability to manage Proxmox VE nodes (`192.168.10.x`), Synology/TrueNAS interfaces (`192.168.10.12`), and service containers (`192.168.110.x`). VLAN 20 is designated for trusted admin endpoints.
 2. **Stateful Ingress Isolation:** UniFi stateful firewall rules prevent low-trust networks (DMZ VLAN 120, IOT VLAN 30) from initiating connections to VLAN 20, while permitting Apache Guacamole (SERVICES VLAN 110) to reach the desktop strictly on the RDP port (`3389`).
 
 ---
@@ -57,7 +57,7 @@ This architecture replaces third-party tools like Google Remote Desktop with a *
  🛡️ [ Cloudflare Tunnel / Public Ingress ] ◄── DMZ (VLAN 120)
                 │
                 ▼
- 🔐 [ Authentik IdP Gateway ] (VLAN 110 (Services)) ◄── SERVICES (VLAN 110)
+ 🔐 [ Authentik IdP Gateway ] (192.168.110.225) ◄── SERVICES (VLAN 110)
         ├── Multi-Factor Auth (WebAuthn / YubiKey / TOTP)
         └── OIDC / Proxy Authorization
                 │
@@ -68,7 +68,7 @@ This architecture replaces third-party tools like Google Remote Desktop with a *
                 │
                 │ RDP (Port 3389)
                 ▼
- 🖥️ [ Linux Mint 22 Desktop VM ] (VLAN 20 (Trusted)) ◄── TRUSTED (VLAN 20)
+ 🖥️ [ Linux Mint 22 Desktop VM ] (192.168.20.70) ◄── TRUSTED (VLAN 20)
         ├── 128GB ZFS Disk (`vm-fast` pool on Dapitan)
         ├── xrdp + xorgxrdp + Audio Redirection
         └── Full Remote Desktop Jump Box
@@ -88,7 +88,7 @@ This architecture replaces third-party tools like Google Remote Desktop with a *
 
 | Parameter | Recommended Value | Notes |
 | :--- | :--- | :--- |
-| **Target Proxmox Node** | `Dapitan` (`VLAN 1 [MGMT]` / `VLAN 10 (MGMT/SecOps)`) | Node 3 in Homelab-Net cluster |
+| **Target Proxmox Node** | `Dapitan` (`192.168.1.27` / `192.168.10.27`) | Node 3 in Homelab-Net cluster |
 | **VM ID** | `505` | Follows Dapitan guest naming standard (`5xx`) |
 | **VM Name** | `mint-desktop-dapitan` | Descriptive hostname |
 | **OS ISO** | `linuxmint-22-cinnamon-64bit.iso` | Cinnamon or XFCE edition |
@@ -208,10 +208,10 @@ qm start 505
 1. Open the Proxmox noVNC console for VM `505` and complete standard Linux Mint installation.
 2. Set Hostname: `mint-desktop-dapitan`.
 3. Set Static IP inside Mint or via UniFi DHCP Reservation:
-   * **IPv4 Address:** `VLAN 20 (Trusted)`
+   * **IPv4 Address:** `192.168.20.70`
    * **Subnet Mask:** `255.255.255.0` (`/24`)
-   * **Gateway:** `VLAN 20 (Trusted)`
-   * **DNS:** `VLAN 110 (Services)` (Pi-hole)
+   * **Gateway:** `192.168.20.1`
+   * **DNS:** `192.168.110.5` (Pi-hole)
 
 4. Install & Tune `xrdp` + `xorgxrdp` for Guacamole RDP Access:
 
@@ -304,10 +304,10 @@ volumes:
    * Forward Auth mode: Single Application / Proxy.
    * Attach **MFA Policy** (Require TOTP or WebAuthn hardware key).
 
-4. **In Guacamole Web UI (`http://VLAN 1 (Mgmt):8080/guacamole/`):**
+4. **In Guacamole Web UI (`http://192.168.1.212:8080/guacamole/`):**
    * Add Connection: `Dapitan-Mint`
    * Protocol: `RDP`
-   * Hostname: `VLAN 20 (Trusted)` (Linux Mint Desktop IP)
+   * Hostname: `192.168.20.192` (Linux Mint Desktop IP)
    * Port: `3389`
    * Username: `homelab-admin`
    * Security Mode: `Any` (Crucial: Avoid NLA errors with xrdp)
@@ -318,24 +318,24 @@ volumes:
 
 ### Step 5: UniFi Gateway Stateful Firewall Rules
 
-Configure the following firewall rules on UniFi Cloud Gateway Max (`VLAN 1 [Gateway]`):
+Configure the following firewall rules on UniFi Cloud Gateway Max (`192.168.1.1`):
 
 1. **Rule 1 (Guacamole to Desktop RDP):**
    * **Action:** Accept
    * **Source:** SERVICES (VLAN 110) — IP of Guacamole Server
-   * **Destination:** TRUSTED (VLAN 20) — `VLAN 20 (Trusted)` (Linux Mint Desktop)
+   * **Destination:** TRUSTED (VLAN 20) — `192.168.20.70` (Linux Mint Desktop)
    * **Port:** TCP `3389`
 
 2. **Rule 2 (Linux Mint Outbound Admin Reach):**
    * **Action:** Accept (Stateful / Established Return)
-   * **Source:** TRUSTED (VLAN 20) — `VLAN 20 (Trusted)`
+   * **Source:** TRUSTED (VLAN 20) — `192.168.20.70`
    * **Destination:** MGMT (VLAN 10) & SERVICES (VLAN 110)
 
 ---
 
 ## 🔍 Verification & Testing Plan
 
-1. **Internal RDP Test:** Test local RDP connectivity from administrative PC to `VLAN 20 (Trusted):3389`.
+1. **Internal RDP Test:** Test local RDP connectivity from administrative PC to `192.168.20.70:3389`.
 2. **Guacamole Gateway Test:** Open Guacamole UI at `http://192.168.110.x:8085/guacamole` and initiate connection to Linux Mint. Verify smooth desktop rendering, audio, and responsiveness.
 3. **Authentik MFA Challenge Test:** Navigate to public endpoint `https://remote.homelab-admin.me` in an Incognito browser session:
    * Verify redirect to `https://auth.homelab-admin.me`.

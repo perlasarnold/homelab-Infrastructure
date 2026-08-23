@@ -1,7 +1,7 @@
 # ⚡ Proxmox Windows VM Performance Optimization Guide
 
 > **Date:** May 19, 2026  
-> **Objective:** Safely diagnose and resolve severe slowness on the Windows 10 guest VM (`Perlas-W10` / ID 101) on Proxmox node `cebu` (VLAN 1 [MGMT]), improve response times, and reduce host CPU load.  
+> **Objective:** Safely diagnose and resolve severe slowness on the Windows 10 guest VM (`Perlas-W10` / ID 101) on Proxmox node `cebu` (192.168.1.26), improve response times, and reduce host CPU load.  
 > **Target VM:** ID 101 (`Perlas-W10`) on Cebu  
 > **Maintainer:** Perlas  
 
@@ -36,11 +36,11 @@ To avoid Fedora's notoriously slow project servers (which were downloading at ~4
 To inject the SCSI storage driver safely before switching the boot controller:
 1. **Add Dummy SCSI Disk**: Created and attached a temporary 1GB VirtIO SCSI disk while the VM was running:
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --scsi1 cebu-zfs:1"
+   ssh root@192.168.1.26 "qm set 101 --scsi1 cebu-zfs:1"
    ```
 2. **Mount Driver ISO**: Loaded the VirtIO ISO in the CD-ROM drive:
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --ide2 local:iso/virtio-win.iso,media=cdrom"
+   ssh root@192.168.1.26 "qm set 101 --ide2 local:iso/virtio-win.iso,media=cdrom"
    ```
 3. **Rationale**: This forced running Windows to detect the VirtIO SCSI controller hardware and prompt for a driver without breaking the boot disk.
 
@@ -53,40 +53,40 @@ Within the Windows guest (accessed via noVNC console):
 ### Step 3.4: Perform Hardware Migration
 Once the guest finished driver installations, the VM was powered down cleanly:
 ```bash
-ssh root@VLAN 1 [MGMT] "qm stop 101"
+ssh root@192.168.1.26 "qm stop 101"
 ```
 
 The final high-performance settings were applied to the VM:
 1. **Detach IDE Disk**: Unlinked the main 200GB disk from `ide0` (moving it to `unused0` safety zone):
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --ide0 none"
+   ssh root@192.168.1.26 "qm set 101 --ide0 none"
    ```
 2. **Reattach as SCSI with Write-Back Cache**: Reattached the main disk as SCSI0, enabling ZFS optimization and high-speed write caching:
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --scsi0 cebu-zfs:vm-101-disk-0,discard=on,ssd=1,cache=writeback"
+   ssh root@192.168.1.26 "qm set 101 --scsi0 cebu-zfs:vm-101-disk-0,discard=on,ssd=1,cache=writeback"
    ```
    * *discard=on*: Enables TRIM support on ZFS SSD storage.
    * *ssd=1*: Tells Windows to optimize its indexing/IO scheduling for SSD.
    * *cache=writeback*: Employs host-level RAM caching for huge write IOPS gains.
 3. **Purge Dummy Volume**: Deleted the temporary 1GB dummy volume to keep the ZFS pool clean:
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --delete unused0"
+   ssh root@192.168.1.26 "qm set 101 --delete unused0"
    ```
 4. **Upgrade Network**: Swapped the emulated network card to the lightweight VirtIO adapter:
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --net0 virtio=00:11:22:33:44:55,bridge=vmbr0,firewall=1"
+   ssh root@192.168.1.26 "qm set 101 --net0 virtio=00:11:22:33:44:55,bridge=vmbr0,firewall=1"
    ```
 5. **Optimize CPU**: Set CPU type to `host` to expose native instruction sets:
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --cpu host"
+   ssh root@192.168.1.26 "qm set 101 --cpu host"
    ```
 6. **Enable Guest Agent**:
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --agent enabled=1"
+   ssh root@192.168.1.26 "qm set 101 --agent enabled=1"
    ```
 7. **Correct Boot Order**: Quoted/escaped the order string to prevent Bash semicolon errors:
    ```bash
-   ssh root@VLAN 1 [MGMT] "qm set 101 --boot order=scsi0\;ide2\;net0"
+   ssh root@192.168.1.26 "qm set 101 --boot order=scsi0\;ide2\;net0"
    ```
 
 ---

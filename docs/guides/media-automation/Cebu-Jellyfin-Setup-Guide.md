@@ -4,10 +4,10 @@ This guide documents the process of deploying a secondary Jellyfin instance on t
 
 ## 1. Infrastructure Overview
 
-- **Host**: `cebu` (VLAN 1 [MGMT])
+- **Host**: `cebu` (192.168.1.26)
 - **Container**: `jellyfin-cebu` (LXC 416)
-- **IP Address**: `VLAN 1 (Mgmt)`
-- **Storage Source**: TrueNAS SCALE (`VLAN 1 (Mgmt)`)
+- **IP Address**: `192.168.1.41`
+- **Storage Source**: TrueNAS SCALE (`192.168.1.211`)
 - **Storage Type**: SMB/CIFS
 
 ---
@@ -21,7 +21,7 @@ To ensure high performance and persistence, the SMB share is mounted at the host
 2. **Credentials**: Stored securely in `/etc/samba/credentials-seagate`.
 3. **Persistence**: Added to `/etc/fstab`:
    ```bash
-   //VLAN 1 (Mgmt)/seagate/Share /mnt/cebu-seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,nofail 0 0
+   //192.168.1.211/seagate/Share /mnt/cebu-seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,nofail 0 0
    ```
 
 ### LXC Bind Mount
@@ -63,7 +63,7 @@ After migration, the library paths were updated in the Jellyfin Web UI to point 
 
 ## 5. Verification
 
-- **Connectivity**: Service is accessible at `http://VLAN 1 (Mgmt):8096`.
+- **Connectivity**: Service is accessible at `http://192.168.1.41:8096`.
 - **Storage**: Confirmed ~8GB of metadata was successfully transferred.
 - **Playback**: Verified that files from the TrueNAS SMB share play correctly in the new container.
 

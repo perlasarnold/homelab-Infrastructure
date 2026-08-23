@@ -20,10 +20,10 @@
 Open your browser and go to:
 
 ```
-https://VLAN 1 [MGMT]:8006
+https://192.168.1.25:8006
 ```
 
-> ⚠️ **Certificate Warning**: You'll see a "Your connection is not private" warning. This is normal — Proxmox uses a self-signed certificate. Click **Advanced → Proceed to VLAN 1 [MGMT] (unsafe)** to continue.
+> ⚠️ **Certificate Warning**: You'll see a "Your connection is not private" warning. This is normal — Proxmox uses a self-signed certificate. Click **Advanced → Proceed to 192.168.1.25 (unsafe)** to continue.
 
 ### 2. Log In
 

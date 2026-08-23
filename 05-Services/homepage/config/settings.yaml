@@ -1,0 +1,26 @@
+---
+# Homepage Settings Configuration
+title: Homelab-Net Dashboard (home.homelab-admin.me)
+# base: https://home.homelab-admin.me
+background:
+  image: https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920&auto=format&fit=crop
+  blur: sm # xs, sm, md, lg, xl
+  saturate: 75 # 0, 50, 75, 100, 125, 150, 200
+  brightness: 50 # 0, 25, 50, 75, 100
+
+cardBlur: md
+theme: dark
+color: slate
+
+headerStyle: clean # clean, boxed, boxedWidgets
+hideVersion: false
+showFields: true
+disableJsonStorage: false
+
+search:
+  provider: duckduckgo
+  target: _blank
+  focus: true
+
+providers:
+  openweathermap: openweathermapapikey

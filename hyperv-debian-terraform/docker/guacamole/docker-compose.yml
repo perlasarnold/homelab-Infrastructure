@@ -1,0 +1,80 @@
+# ─── Apache Guacamole — Browser-based SSH/RDP remote access ──────────────────
+# Access: http://<VM-IP>:8085/guacamole
+# Default credentials: guacadmin / guacadmin  ← CHANGE ON FIRST LOGIN
+#
+# Security model (best practice):
+#   1. SSH KEY auth: upload private key in Guacamole connection settings
+#      (stored encrypted in the postgres DB — never in this repo)
+#   2. TOTP MFA: enabled via Guacamole TOTP extension — scan QR in Google Authenticator
+#      Both factors required: something-you-have (key) + something-you-know (TOTP)
+#   3. Put behind Nginx Proxy Manager with HTTPS + Let's Encrypt
+#   4. Never expose port 8085 to the internet — use NPM as the only public entry point
+#
+# Connection setup (in Guacamole UI after first login):
+#   Settings → Connections → New Connection
+#     Protocol: SSH
+#     Hostname: <debian-vm-ip>
+#     Port: 22
+#     Username: debian
+#     Private key: paste contents of ~/.ssh/homelab_ed25519 (from secrets vault)
+#     TOTP: enabled per-user in User Settings
+
+name: guacamole
+
+services:
+  guacd:
+    image: guacamole/guacd:latest
+    container_name: guacd
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  guacamole:
+    image: guacamole/guacamole:latest
+    container_name: guacamole
+    restart: unless-stopped
+    depends_on:
+      - guacd
+      - guacamole-db
+    ports:
+      - "8085:8080"
+    environment:
+      GUACD_HOSTNAME:  guacd
+      POSTGRESQL_HOSTNAME: guacamole-db
+      POSTGRESQL_DATABASE: guacamole_db
+      POSTGRESQL_USER:     guacamole_user
+      POSTGRESQL_PASSWORD: "${GUAC_DB_PASSWORD}"    # from .env (SOPS-encrypted)
+      # Enable TOTP MFA extension
+      TOTP_ENABLED:    "true"
+      TOTP_ISSUER:     "Homelab"
+      TOTP_DIGITS:     "6"
+      TOTP_PERIOD:     "30"
+      TOTP_MODE:       "sha1"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  guacamole-db:
+    image: postgres:16-alpine
+    container_name: guacamole-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       guacamole_db
+      POSTGRES_USER:     guacamole_user
+      POSTGRES_PASSWORD: "${GUAC_DB_PASSWORD}"
+    volumes:
+      - guac_pg:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro   # schema init on first run
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+volumes:
+  guac_pg:

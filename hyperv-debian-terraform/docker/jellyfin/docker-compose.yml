@@ -1,0 +1,32 @@
+# ─── Jellyfin ─────────────────────────────────────────────────────────────────
+# Free, open-source media server. No subscriptions, no tracking.
+# Access: http://<VM-IP>:8096
+# r/homelab rating: ★★★★★  preferred over Plex for privacy-conscious users
+#
+# Media path: mount your library under /media on the VM, or adjust the bind
+# mount paths below to match where your files live in the VM.
+
+name: jellyfin
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    network_mode: host   # Better for DLNA/mDNS discovery
+    environment:
+      - TZ=America/Los_Angeles     # ← your timezone
+      - JELLYFIN_PublishedServerUrl=http://jellyfin.local  # optional
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - /media/movies:/data/movies:ro    # ← path to your movies in the VM
+      - /media/tv:/data/tvshows:ro       # ← path to your TV shows in the VM
+      - /media/music:/data/music:ro      # ← path to your music in the VM
+    # Optional: hardware transcoding (Intel Quick Sync)
+    # devices:
+    #   - /dev/dri:/dev/dri
+
+volumes:
+  jellyfin_config:
+  jellyfin_cache:

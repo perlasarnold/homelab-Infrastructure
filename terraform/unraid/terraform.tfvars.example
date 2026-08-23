@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars and adjust values.
+# NEVER commit this file to git.
+
+unraid_ip      = "192.168.1.24"
+docker_port    = 2375
+appdata_path   = "/mnt/user/appdata"
+media_path     = "/mnt/user/PlexMedia"
+downloads_path = "/mnt/user/downloads"

@@ -1,0 +1,91 @@
+# validate.yml
+# Validates all configs before any apply.
+# Runs on every PR and push. Catches errors early, for free.
+
+name: "Validate"
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: "Lint & Validate"
+    runs-on: [self-hosted, Linux, homelab]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Terraform (Hyper-V) ───────────────────────────────────────────────
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.9"
+
+      - name: Terraform fmt check (Hyper-V)
+        run: terraform fmt -check -recursive terraform/
+        continue-on-error: false
+
+      - name: Terraform init + validate (Hyper-V)
+        working-directory: terraform
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Terraform init + validate (Proxmox)
+        working-directory: terraform/proxmox
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      # ── YAML / Compose lint ───────────────────────────────────────────────
+      - name: Install yamllint
+        run: pip install yamllint --quiet
+
+      - name: Write yamllint config
+        run: |
+          cat > /tmp/.yamllint <<'EOF'
+          extends: relaxed
+          rules:
+            line-length:
+              max: 160
+          EOF
+
+      - name: Lint GitHub Actions workflows
+        run: yamllint -c /tmp/.yamllint .github/workflows/
+
+      - name: Lint docker-compose files
+        run: |
+          find docker -name 'docker-compose.yml' | while read f; do
+            echo "Checking $f..."
+            yamllint -c /tmp/.yamllint "$f"
+          done
+
+      - name: Lint Ansible playbooks
+        run: yamllint -c /tmp/.yamllint ansible/
+
+      # ── Ansible lint ──────────────────────────────────────────────────────
+      - name: Install ansible-lint
+        run: pip install ansible-lint --quiet
+
+      - name: Run ansible-lint
+        # 03_deploy_stack.yml uses Jinja2 template vars — skip it (informational only)
+        run: |
+          ansible-lint ansible/playbooks/ \
+            --exclude ansible/playbooks/03_deploy_stack.yml
+        continue-on-error: true
+
+      # ── Shell script lint ─────────────────────────────────────────────────
+      - name: Install shellcheck
+        run: sudo apt-get install -y -qq shellcheck
+
+      - name: Shellcheck install.sh
+        run: shellcheck install.sh
+
+      # ── Secret leak scan ──────────────────────────────────────────────────
+      - name: Scan for accidentally committed secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,78 @@
+---
+- name: Create log directory if missing
+  file:
+    path: "{{ proxmox_update_log_path | dirname }}"
+    state: directory
+    mode: '0755'
+
+- name: Log update run start
+  lineinfile:
+    path: "{{ proxmox_update_log_path }}"
+    line: "=== UPDATE RUN STARTED FOR {{ inventory_hostname }}: {{ ansible_date_time.iso8601 }} ==="
+    create: yes
+    mode: '0644'
+
+- name: Check Proxmox cluster status (if clustered)
+  shell: pvecm status
+  register: preflight_pvecm
+  changed_when: false
+  failed_when: false
+
+- name: Verify cluster quorum before starting node update
+  fail:
+    msg: "Cluster is not quorate! Stopping update on {{ inventory_hostname }} to prevent cluster split-brain."
+  when:
+    - "'Cluster information' in preflight_pvecm.stdout"
+    - "'Quorate: Yes' not in preflight_pvecm.stdout"
+
+- name: Update Proxmox Host OS
+  include_tasks: update_host.yml
+  tags:
+    - host
+    - nodes
+  when: proxmox_update_host | default(true) | bool
+
+- name: Get all running LXC containers on host
+  shell: pct list | grep running | awk '{print $1 "|" $2}'
+  register: running_lxcs
+  changed_when: false
+  tags:
+    - lxc
+    - containers
+
+- name: Process LXC containers
+  include_tasks: process_lxc.yml
+  loop: "{{ running_lxcs.stdout_lines }}"
+  loop_control:
+    loop_var: lxc_entry
+  when:
+    - proxmox_update_lxcs | default(true) | bool
+    - running_lxcs.stdout_lines | length > 0
+  tags:
+    - lxc
+    - containers
+
+- name: Get all running VMs on host
+  shell: qm list | grep running | awk '{print $1 "|" $2}'
+  register: running_vms
+  changed_when: false
+  tags:
+    - vm
+    - vms
+
+- name: Process VMs
+  include_tasks: process_vm.yml
+  loop: "{{ running_vms.stdout_lines }}"
+  loop_control:
+    loop_var: vm_entry
+  when:
+    - proxmox_update_vms | default(true) | bool
+    - running_vms.stdout_lines | length > 0
+  tags:
+    - vm
+    - vms
+
+- name: Log update run complete
+  lineinfile:
+    path: "{{ proxmox_update_log_path }}"
+    line: "=== UPDATE RUN COMPLETED FOR {{ inventory_hostname }}: {{ ansible_date_time.iso8601 }} ==="

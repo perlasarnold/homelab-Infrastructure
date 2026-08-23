@@ -1,0 +1,26 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# terraform.tfvars.example
+#
+# Copy this file to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored — never commit secrets.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# WinRM credentials (Windows user with Hyper-V Admin rights)
+winrm_username    = "YourWindowsUsername"
+winrm_password    = "YourWindowsPassword"   # Use env var TF_VAR_winrm_password in CI
+
+# Path to the PEM cert exported by setup\01_enable_hyperv_winrm.ps1
+winrm_cacert_path = "C:\\Github\\hyperv-debian-terraform\\setup\\winrm_cacert.pem"
+
+# VM settings
+vm_name        = "debian-server"
+vm_cpus        = 2
+vm_memory_mb   = 2048     # MB
+disk_size_gb   = 40
+
+# Paths
+vhdx_dir       = "C:\\Hyper-V"
+iso_path       = "C:\\ISOs\\debian-13-amd64-netinst.iso"
+
+# Networking
+network_switch = "Default Switch"   # Built-in NAT switch — internet access out of the box

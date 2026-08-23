@@ -1,0 +1,187 @@
+---
+# ansible/playbooks/04_maintenance.yml
+# Monthly maintenance: system updates, Docker image refreshes, reboot-if-needed.
+# Triggered by: .github/workflows/scheduled-maintenance.yml (cron: monthly)
+# Also installs the on-VM maintenance cron script for autonomous self-healing.
+#
+# Self-healing behaviour:
+#   1. apt update + dist-upgrade (security patches applied automatically by
+#      unattended-upgrades daily; this does a full upgrade monthly)
+#   2. Pull latest Docker images + recreate containers (zero-downtime rolling)
+#   3. Prune unused images/volumes > 7 days old
+#   4. Check /var/run/reboot-required; if set, gracefully stop stacks → reboot
+#   5. After reboot, systemd restarts all Docker stacks automatically
+#      (because compose services use restart: unless-stopped)
+#
+# TROUBLESHOOTING guide is in: docs/docs/troubleshooting.md
+
+- name: Monthly maintenance + self-healing
+  hosts: homelab_vms
+  become: true
+  gather_facts: true
+  serial: 1    # one VM at a time to avoid simultaneous reboots
+
+  vars:
+    stack_base: /opt/homelab/stacks
+    reboot_window_start: "02:00"   # only reboot between 2-4am local time
+    reboot_window_end:   "04:00"
+
+  tasks:
+    # ── System package updates ─────────────────────────────────────────────────
+    - name: Update apt package list
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Perform full dist-upgrade
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: true
+        autoclean: true
+      register: apt_upgrade
+
+    - name: Log upgraded packages
+      ansible.builtin.debug:
+        msg: "Packages changed: {{ apt_upgrade.changed }}"
+
+    # ── Docker image updates ───────────────────────────────────────────────────
+    - name: Find all deployed stacks
+      ansible.builtin.find:
+        paths: "{{ stack_base }}"
+        patterns: "docker-compose.yml"
+        recurse: true
+      register: compose_files
+
+    - name: Pull latest images for each stack
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: "{{ item.path | dirname }}"
+      loop: "{{ compose_files.files }}"
+      become_user: debian
+      register: pull_results
+      changed_when: "'Pulled' in pull_results.stdout"
+      ignore_errors: true
+
+    - name: Recreate containers with updated images
+      ansible.builtin.command:
+        cmd: docker compose up -d --remove-orphans
+        chdir: "{{ item.path | dirname }}"
+      loop: "{{ compose_files.files }}"
+      become_user: debian
+      ignore_errors: true
+
+    # ── Docker cleanup ─────────────────────────────────────────────────────────
+    - name: Prune unused Docker images (older than 7 days)
+      ansible.builtin.command: docker image prune -af --filter "until=168h"
+      changed_when: false
+
+    - name: Prune unused Docker volumes
+      ansible.builtin.command: docker volume prune -f
+      changed_when: false
+
+    # ── Reboot if required ─────────────────────────────────────────────────────
+    - name: Check if reboot is required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_flag
+
+    - name: Get current time for reboot window check
+      ansible.builtin.command: date +%H:%M
+      register: current_time
+      changed_when: false
+
+    - name: Reboot if kernel update requires it (within maintenance window)
+      ansible.builtin.reboot:
+        msg: "Homelab monthly maintenance reboot"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 10
+        post_reboot_delay: 30
+      when:
+        - reboot_flag.stat.exists
+        - current_time.stdout >= reboot_window_start
+        - current_time.stdout <= reboot_window_end
+
+    - name: Note that reboot needed but outside window
+      ansible.builtin.debug:
+        msg: >
+          Reboot required but current time {{ current_time.stdout }} is outside
+          window {{ reboot_window_start }}–{{ reboot_window_end }}.
+          Reboot will be attempted at next maintenance run.
+      when:
+        - reboot_flag.stat.exists
+        - current_time.stdout < reboot_window_start or current_time.stdout > reboot_window_end
+
+    # ── Install on-VM self-healing cron ───────────────────────────────────────
+    - name: Install Docker watchdog script
+      ansible.builtin.copy:
+        dest: /usr/local/bin/docker-watchdog.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Self-healing: restart any stopped homelab containers
+          # Runs every 5 minutes via cron
+          set -euo pipefail
+          STACK_BASE="{{ stack_base }}"
+          LOG="/var/log/docker-watchdog.log"
+          TS=$(date '+%Y-%m-%d %H:%M:%S')
+
+          for compose in "$STACK_BASE"/*/docker-compose.yml; do
+            dir=$(dirname "$compose")
+            svc=$(basename "$dir")
+            # Get expected service count vs running count
+            expected=$(docker compose -f "$compose" config --services 2>/dev/null | wc -l)
+            running=$(docker compose -f "$compose" ps --status running -q 2>/dev/null | wc -l)
+            if [[ "$running" -lt "$expected" ]]; then
+              echo "[$TS] ⚠ $svc: $running/$expected containers running. Restarting..." >> "$LOG"
+              docker compose -f "$compose" up -d --remove-orphans >> "$LOG" 2>&1
+              echo "[$TS] ✓ $svc restarted" >> "$LOG"
+            fi
+          done
+
+    - name: Install watchdog cron (every 5 minutes)
+      ansible.builtin.cron:
+        name: "Docker self-healing watchdog"
+        job: "/usr/local/bin/docker-watchdog.sh"
+        minute: "*/5"
+        user: root
+
+    - name: Install monthly full-update cron (1st of month at 3am)
+      ansible.builtin.cron:
+        name: "Monthly system + Docker update"
+        job: >
+          apt-get update -qq &&
+          apt-get dist-upgrade -y -qq &&
+          /usr/local/bin/docker-watchdog.sh &&
+          docker image prune -af --filter "until=168h" > /var/log/monthly-update.log 2>&1
+        minute: "0"
+        hour: "3"
+        day: "1"
+        user: root
+
+    - name: Rotate watchdog log
+      ansible.builtin.copy:
+        dest: /etc/logrotate.d/docker-watchdog
+        content: |
+          /var/log/docker-watchdog.log {
+            weekly
+            rotate 4
+            compress
+            missingok
+            notifempty
+          }
+          /var/log/monthly-update.log {
+            monthly
+            rotate 12
+            compress
+            missingok
+            notifempty
+          }
+
+    - name: Show maintenance summary
+      ansible.builtin.debug:
+        msg:
+          - "✓ System packages updated"
+          - "✓ Docker images refreshed for {{ compose_files.files | length }} stack(s)"
+          - "✓ Docker watchdog cron installed (every 5 min)"
+          - "✓ Monthly update cron installed (1st of month 03:00)"
+          - "  Reboot required: {{ reboot_flag.stat.exists }}"

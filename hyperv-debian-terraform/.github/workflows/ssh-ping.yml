@@ -1,0 +1,56 @@
+# ssh-ping.yml
+# Manual workflow to verify SSH connectivity into the Debian VM.
+# Run after: Terraform has applied AND Debian OS is installed.
+
+name: "SSH Ping Debian VM"
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Command to run on the Debian VM (default: uname -a)"
+        required: false
+        default: "uname -a && hostname && ip addr show"
+
+jobs:
+  ssh-test:
+    name: "SSH into Debian VM"
+    runs-on: [self-hosted, Windows, hyperv]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Write the private SSH key from GitHub Secrets to a temp file
+      - name: Write SSH private key
+        shell: pwsh
+        run: |
+          $keyPath = "$env:RUNNER_TEMP\debian_id_rsa"
+          $keyContent = "${{ secrets.DEBIAN_SSH_PRIVATE_KEY }}"
+          Set-Content -Path $keyPath -Value $keyContent -Encoding ASCII -NoNewline
+          icacls $keyPath /inheritance:r /grant:r "${env:USERNAME}:(R)" | Out-Null
+          echo "SSH_KEY_PATH=$keyPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: SSH into Debian VM and run command
+        shell: pwsh
+        run: |
+          $vmIp  = "${{ secrets.DEBIAN_VM_IP }}"
+          $vmUser = "${{ secrets.DEBIAN_VM_USER }}"
+          $cmd   = "${{ github.event.inputs.command }}"
+          $key   = $env:SSH_KEY_PATH
+
+          Write-Host "Connecting to $vmUser@$vmIp ..."
+          ssh -o StrictHostKeyChecking=no `
+              -o ConnectTimeout=15 `
+              -i $key `
+              "${vmUser}@${vmIp}" `
+              $cmd
+
+      - name: Clean up SSH key
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path $env:SSH_KEY_PATH) {
+            Remove-Item -Force $env:SSH_KEY_PATH
+            Write-Host "SSH key removed."
+          }

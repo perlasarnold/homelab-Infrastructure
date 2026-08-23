@@ -1,0 +1,21 @@
+# ─── Uptime Kuma ──────────────────────────────────────────────────────────────
+# Beautiful uptime monitoring dashboard. Monitor websites, ports, Docker containers.
+# Access: http://<VM-IP>:3001  (create admin account on first visit)
+# r/homelab rating: ★★★★★  the most recommended uptime monitor for homelabs
+# GitHub: https://github.com/louislam/uptime-kuma
+
+name: uptime-kuma
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # optional: monitor containers
+
+volumes:
+  uptime_kuma_data:

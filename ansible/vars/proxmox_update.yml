@@ -1,0 +1,41 @@
+---
+# Proxmox Sequential Update Configuration - Core Homelab
+
+# Global logging & timeout settings
+proxmox_update_log_path: "/var/log/proxmox-updates.log"
+proxmox_update_snapshot_retention_hours: 72
+proxmox_update_timeout_minutes: 30
+
+# Proxmox VE Host OS update settings
+proxmox_update_host: true
+proxmox_host_repo_type: "no-subscription" # "no-subscription", "enterprise", or "none"
+proxmox_auto_reboot: false                 # Set to true to automatically reboot host if kernel update requires reboot
+proxmox_reboot_timeout_seconds: 600
+
+# Guest Workload Update toggles
+proxmox_update_lxcs: true
+proxmox_update_vms: true
+
+# Exclusion lists - items in these lists will NOT be updated automatically
+proxmox_exclude_lxc:
+  - 100  # Pi-hole Primary
+  - 101  # Pi-hole Secondary
+  - 102  # WireGuard VPN
+  - 103  # Cloudflare Tunnel
+
+proxmox_exclude_vms:
+  - 200  # OPNsense Firewall
+  - 201  # TrueNAS Core
+  - 204  # Immich-UbuntuLTS (Requires manual docker upgrading)
+
+# Health check settings
+proxmox_health_check_ping: true
+proxmox_health_check_delay_seconds: 30
+
+# Package manager commands per Linux distro for guest containers
+proxmox_distro_commands:
+  debian: "apt update && DEBIAN_FRONTEND=noninteractive apt upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
+  ubuntu: "apt update && DEBIAN_FRONTEND=noninteractive apt upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
+  rocky: "dnf update -y"
+  alpine: "apk update && apk upgrade"
+  fedora: "dnf update -y"

@@ -1,0 +1,53 @@
+# sync-docs-to-wiki.yml
+# Triggered on push to main when docs/ or *.md files change.
+# Copies docs + docker README files to the VM and tells Wiki.js to git-sync.
+#
+# Two-part strategy:
+#   1. The Wiki.js git storage is configured to pull from this repo's docs/ folder.
+#      This workflow just pings the webhook to trigger an immediate sync.
+#   2. Also rsync the full docs/ tree directly to the VM as a fallback.
+
+name: "Sync Docs → Wiki.js"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "docker/*/README.md"
+      - "README.md"
+      - "*.md"
+
+jobs:
+  sync:
+    name: "Sync docs to Wiki.js"
+    runs-on: [self-hosted, Linux, homelab]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Write SSH private key
+        run: |
+          install -m 600 /dev/null /tmp/wiki_key
+          echo "${{ secrets.DEBIAN_SSH_PRIVATE_KEY }}" > /tmp/wiki_key
+
+      - name: Sync docs/ to VM via rsync
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i /tmp/wiki_key -o StrictHostKeyChecking=accept-new" \
+            docs/ \
+            ${{ secrets.DEBIAN_VM_USER }}@${{ secrets.DEBIAN_VM_IP }}:/opt/homelab/wiki-docs/
+        # rsync is efficient: only transfers changed files, minimises bandwidth
+
+      - name: Trigger Wiki.js git sync via webhook
+        run: |
+          curl -sf -X POST \
+            -H "Authorization: Bearer ${{ secrets.WIKIJS_WEBHOOK_TOKEN }}" \
+            "http://${{ secrets.DEBIAN_VM_IP }}:3005/api/git/hook" \
+          && echo "Wiki.js git sync triggered ✓" \
+          || echo "Webhook ping failed (OK if wiki not yet deployed)"
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f /tmp/wiki_key

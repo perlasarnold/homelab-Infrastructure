@@ -1,0 +1,22 @@
+---
+# ansible/inventory.yml
+# The VM IP is injected at runtime from the DEBIAN_VM_IP GitHub Secret.
+# In GitHub Actions, generate this file before running ansible with:
+#   echo "all:" > ansible/inventory.yml
+#   echo "  hosts:" >> ansible/inventory.yml
+#   echo "    debian-server:" >> ansible/inventory.yml
+#   echo "      ansible_host: ${{ secrets.DEBIAN_VM_IP }}" >> ansible/inventory.yml
+# See .github/workflows/ansible-bootstrap.yml for the full pattern.
+
+all:
+  vars:
+    ansible_user: debian
+    ansible_python_interpreter: /usr/bin/python3
+    # SSH key is written to runner temp dir by the workflow — never stored in repo
+    ansible_ssh_private_key_file: "{{ lookup('env', 'ANSIBLE_SSH_KEY_PATH') }}"
+
+  children:
+    homelab_vms:
+      hosts:
+        debian-server:
+          ansible_host: "{{ lookup('env', 'DEBIAN_VM_IP') }}"

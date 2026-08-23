@@ -1,0 +1,93 @@
+---
+- name: Parse LXC entry
+  set_fact:
+    lxc_id: "{{ lxc_entry.split('|')[0] }}"
+    lxc_name: "{{ lxc_entry.split('|')[1] }}"
+
+- name: Check if LXC is excluded
+  set_fact:
+    lxc_excluded: "{{ lxc_id | int in proxmox_exclude_lxc or lxc_id in proxmox_exclude_lxc }}"
+
+- name: Skip excluded LXC
+  debug:
+    msg: "Skipping excluded LXC {{ lxc_id }} ({{ lxc_name }}) - in exclusion list"
+  when: lxc_excluded
+
+- name: Process LXC {{ lxc_id }} ({{ lxc_name }})
+  block:
+    - name: Log LXC update start
+      lineinfile:
+        path: "{{ proxmox_update_log_path }}"
+        line: "[LXC {{ lxc_id }} {{ lxc_name }}] Starting update process"
+
+    - name: Create pre-update snapshot
+      shell: "pct snapshot {{ lxc_id }} pre-update-{{ ansible_date_time.epoch }} --description 'Automated update snapshot'"
+      register: lxc_snapshot
+      retries: 3
+      delay: 10
+      until: lxc_snapshot.rc == 0
+
+    - name: Run system update inside LXC
+      shell: "pct exec {{ lxc_id }} -- bash -c '{{ proxmox_distro_commands.debian }}'"
+      register: lxc_update_result
+      ignore_errors: true
+      async: "{{ proxmox_update_timeout_minutes * 60 }}"
+      poll: 10
+
+    - name: Wait for health check delay
+      pause:
+        seconds: "{{ proxmox_health_check_delay_seconds }}"
+      when: lxc_update_result.rc == 0
+
+    - name: Verify LXC is still running
+      shell: "pct status {{ lxc_id }} | grep -q running"
+      register: lxc_health_check
+      ignore_errors: true
+      when: lxc_update_result.rc == 0
+
+    - name: Update successful
+      block:
+        - name: Log LXC update success
+          lineinfile:
+            path: "{{ proxmox_update_log_path }}"
+            line: "[LXC {{ lxc_id }} {{ lxc_name }}] Update completed successfully"
+
+        - name: Check if reboot required inside LXC
+          shell: "pct exec {{ lxc_id }} -- bash -c 'test -f /var/run/reboot-required && echo required || echo not_required'"
+          register: lxc_reboot_check
+          ignore_errors: true
+
+        - name: Log reboot status
+          lineinfile:
+            path: "{{ proxmox_update_log_path }}"
+            line: "[LXC {{ lxc_id }} {{ lxc_name }}] Reboot required: {{ 'YES' if (lxc_reboot_check.stdout | default('') == 'required') else 'NO' }}"
+          when: lxc_reboot_check.rc == 0
+
+      when:
+        - lxc_update_result.rc == 0
+        - lxc_health_check.rc | default(1) == 0
+
+    - name: Update failed - rollback
+      block:
+        - name: Log update failure
+          lineinfile:
+            path: "{{ proxmox_update_log_path }}"
+            line: "[LXC {{ lxc_id }} {{ lxc_name }}] UPDATE FAILED - ROLLING BACK TO SNAPSHOT"
+
+        - name: Rollback LXC to pre-update snapshot
+          shell: "pct rollback {{ lxc_id }} pre-update-{{ ansible_date_time.epoch }}"
+          register: lxc_rollback_result
+
+        - name: Restart LXC container after rollback
+          shell: "pct start {{ lxc_id }}"
+          ignore_errors: true
+
+        - name: Log rollback complete
+          lineinfile:
+            path: "{{ proxmox_update_log_path }}"
+            line: "[LXC {{ lxc_id }} {{ lxc_name }}] Rollback completed successfully"
+
+      when:
+        - lxc_update_result.rc != 0 or (lxc_health_check.rc | default(1) != 0)
+
+  when: not lxc_excluded

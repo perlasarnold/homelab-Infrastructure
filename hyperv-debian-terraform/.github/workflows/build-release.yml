@@ -1,0 +1,57 @@
+# build-release.yml
+# Builds the Windows installer.exe and attaches it to a GitHub Release automatically.
+# Triggered when you create a new release tag (v1.0, v1.1, etc.)
+
+name: "Build Windows Installer"
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: "Build Homelab-Installer.exe"
+    runs-on: windows-latest   # GitHub-hosted Windows runner — has Python
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies + PyInstaller
+        run: pip install -r installer/requirements.txt
+
+      - name: Build .exe
+        run: |
+          pyinstaller `
+            --onefile `
+            --console `
+            --name "Homelab-Installer" `
+            --hidden-import rich `
+            --hidden-import InquirerPy `
+            --hidden-import prompt_toolkit `
+            --hidden-import prompt_toolkit.output.windows `
+            --hidden-import prompt_toolkit.input.win32 `
+            installer/installer.py
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Homelab-Installer.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload as artifact (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Homelab-Installer-${{ github.sha }}
+          path: dist/Homelab-Installer.exe
+          retention-days: 7

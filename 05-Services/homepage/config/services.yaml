@@ -1,0 +1,227 @@
+---
+- Security & Access Control:
+    - Authentik SSO:
+        icon: authentik.png
+        href: https://auth.homelab-admin.me
+        description: Identity Provider & Single Sign-On
+
+    - Wazuh SIEM:
+        icon: wazuh.png
+        href: https://wazuh.homelab-admin.me
+        description: Security Information & Event Monitoring (Cebu VM 250)
+
+    - Apache Guacamole:
+        icon: guacamole.png
+        href: https://guacamole.homelab-admin.me
+        description: HTML5 Remote Desktop Portal (Dapitan CT 114)
+
+    - Nginx Proxy Manager:
+        icon: nginx-proxy-manager.png
+        href: http://192.168.120.211:81
+        description: Reverse Proxy & Wildcard SSL Management (Cebu CT 105)
+
+- Core Hypervisors & Infrastructure:
+    - Proxmox Bulakan:
+        icon: proxmox.png
+        href: https://192.168.1.25:8006
+        description: Primary PVE Hypervisor Node (Host 1)
+        widget:
+          type: proxmox
+          url: https://192.168.1.25:8006
+          username: homepage-monitoring@pve!token-id
+          password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
+          node: Bulakan
+          tlsInsecure: true
+
+    - Proxmox Cebu:
+        icon: proxmox.png
+        href: https://192.168.1.26:8006
+        description: Secondary PVE Hypervisor Node (Host 2)
+        widget:
+          type: proxmox
+          url: https://192.168.1.26:8006
+          username: homepage-monitoring@pve!token-id
+          password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
+          node: cebu
+          tlsInsecure: true
+
+    - Proxmox Dapitan:
+        icon: proxmox.png
+        href: https://192.168.1.27:8006
+        description: Tertiary PVE Hypervisor Node (Host 3)
+        widget:
+          type: proxmox
+          url: https://192.168.1.27:8006
+          username: homepage-monitoring@pve!token-id
+          password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
+          node: Dapitan
+          tlsInsecure: true
+
+    - Home Assistant OS:
+        icon: home-assistant.png
+        href: http://192.168.1.111:8123
+        description: Smart Home Automation Hub (Dapitan VM 111)
+
+    - Pi-hole Primary (Bulakan):
+        icon: pi-hole.png
+        href: http://192.168.1.4/admin
+        description: Network DNS Sinkhole & Adblock (Bulakan CT 301)
+
+    - Pi-hole Secondary (Cebu):
+        icon: pi-hole.png
+        href: http://192.168.1.5/admin
+        description: Secondary DNS Sinkhole (Cebu CT 401)
+
+    - PXE Boot Server:
+        icon: linux.png
+        href: https://pxe.homelab-admin.me
+        description: Automated OS Provisioning & Netboot (Dapitan CT 513)
+
+- Media & Entertainment:
+    - Immich Photos:
+        icon: immich.png
+        href: https://immich.homelab-admin.me
+        description: Self-Hosted High-Performance Photo Management (Dapitan CT 504)
+
+    - Plex Media Server:
+        icon: plex.png
+        href: https://plexdp.homelab-admin.me
+        description: Hardware-Accelerated Plex Streaming (Dapitan CT 509)
+
+    - Jellyfin HA Cluster:
+        icon: jellyfin.png
+        href: https://jellyfin.homelab-admin.me
+        description: Active-Active High Availability Streaming (Bulakan/Dapitan)
+
+    - Audiobookshelf:
+        icon: audiobookshelf.png
+        href: https://audiobookbay.homelab-admin.me
+        description: Audiobooks & Podcasts Library (Bulakan CT 100)
+
+    - Calibre-Web:
+        icon: calibre-web.png
+        href: http://192.168.1.115:8083
+        description: Ebook Library Web Reader (Bulakan CT 113)
+
+    - BookOrbit:
+        icon: bookstack.png
+        href: https://bookorbit.homelab-admin.me
+        description: Modern Ebook Platform (Dapitan CT 514)
+
+- Automation & Arr Stack (Cebu CT 417):
+    - Sonarr:
+        icon: sonarr.png
+        href: https://sonarr.homelab-admin.me
+        description: TV Series Download & Library Automation
+        widget:
+          type: sonarr
+          url: http://192.168.110.42:8989
+          key: <YOUR_SONARR_API_KEY>
+
+    - Transmission VPN:
+        icon: transmission.png
+        href: https://torrent.homelab-admin.me
+        description: Surfshark WireGuard BitTorrent Client
+        widget:
+          type: transmission
+          url: http://192.168.110.42:9091
+
+    - Readarr:
+        icon: readarr.png
+        href: https://readarr.homelab-admin.me
+        description: Book & Audiobook Automation
+
+    - Radarr:
+        icon: radarr.png
+        href: http://192.168.110.42:7878
+        description: Movie Collection & Download Automation
+
+    - Prowlarr:
+        icon: prowlarr.png
+        href: http://192.168.110.42:9696
+        description: Centralized Indexer & Torrent Tracker Sync
+
+    - Bazarr:
+        icon: bazarr.png
+        href: http://192.168.110.42:6767
+        description: Subtitle Management Automation
+
+    - Wizarr:
+        icon: plex.png
+        href: http://192.168.110.42:5690
+        description: Media Invitation & User Onboarding Portal
+
+- Storage & Synology Cloud (PNAS):
+    - Synology DSM:
+        icon: synology.png
+        href: http://192.168.1.12:5000
+        description: Synology DiskStation Manager Interface
+
+    - Synology Photos:
+        icon: synology-photos.png
+        href: http://192.168.1.12:5000/?launchApp=SYNO.Foto.AppInstance
+        description: Synology Centralized Photo Management
+
+    - Synology Drive:
+        icon: synology-drive.png
+        href: http://192.168.1.12:5000/?launchApp=SYNO.SDS.Drive.Application
+        description: Synology Personal Cloud Drive Sync
+
+    - Synology File Station:
+        icon: synology.png
+        href: http://192.168.1.12:5000/?launchApp=SYNO.SDS.App.FileStation3.Instance
+        description: Synology Cloud File Browser
+
+- Cloud & Infrastructure Management:
+    - Cloudflare Dashboard:
+        icon: cloudflare.png
+        href: https://dash.cloudflare.com/
+        description: DNS, CDN, Edge Security & Zero Trust Tunnels
+
+    - Digital Plat Dashboard:
+        icon: cloudflare.png
+        href: https://dashboard.digitalplat.org/
+        description: Digital Platform & Cloud Infrastructure Portal
+
+- Certifications & Tech Learning:
+    - Whizlabs:
+        icon: school.png
+        href: https://www.whizlabs.com/
+        description: Cloud & DevOps Hands-On Labs, Video Courses & Practice Tests
+
+    - SkillCertPro:
+        icon: chrome.png
+        href: https://skillcertpro.com/
+        description: IT Certification Mock Exams & Master Exam Preparation
+
+- Developer & Media Resources:
+    - Free for Developers:
+        icon: github.png
+        href: https://free-for.dev/#/
+        description: Curated List of Free Tier Cloud & Dev Services
+
+    - Z-Library:
+        icon: bookstack.png
+        href: https://z-library.im/
+        description: Online Free E-Book & Academic Article Search
+
+    - AudiobookBay:
+        icon: audiobookshelf.png
+        href: https://audiobookbay.lu/
+        description: Audiobook Torrent Tracker & Media Library
+
+- Productivity & Dashboards:
+    - Obsidian Sync:
+        icon: obsidian.png
+        href: https://obsidian.homelab-admin.me
+        description: Knowledge Base & Vault Sync
+
+    - Heimdall:
+        icon: heimdall.png
+        href: https://heimdall.homelab-admin.me
+        description: Secondary Dashboard Launcher
+
+    - Main Website:
+        icon: github.png
+        href: https://homelab-admin.me
+        description: Personal Blog & Portfolio (homelab-admin.github.io)

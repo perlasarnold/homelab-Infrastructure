@@ -1,0 +1,30 @@
+# ─── Vaultwarden (Bitwarden-compatible) ───────────────────────────────────────
+# Self-hosted password manager. Works with official Bitwarden browser extensions / apps.
+# Access: http://<VM-IP>:8083
+# r/homelab rating: ★★★★★  #1 most recommended self-hosted password manager
+#
+# ⚠️  Generate ADMIN_TOKEN with: openssl rand -base64 48
+# ⚠️  For production, put behind Nginx Proxy Manager with HTTPS — never expose HTTP.
+# ⚠️  Bitwarden clients require HTTPS. Use NPM with Let's Encrypt.
+
+name: vaultwarden
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    ports:
+      - "8083:80"
+    volumes:
+      - vaultwarden_data:/data
+    environment:
+      DOMAIN: "https://vaultwarden.yourdomain.com"   # ← required for HTTPS clients
+      SIGNUPS_ALLOWED: "true"       # set to false after creating your account
+      INVITATIONS_ALLOWED: "true"
+      ADMIN_TOKEN: "REPLACE_WITH_openssl_rand_-base64_48"
+      LOG_LEVEL: "warn"
+      EXTENDED_LOGGING: "true"
+
+volumes:
+  vaultwarden_data:

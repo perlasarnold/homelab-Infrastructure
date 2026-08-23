@@ -1,0 +1,13 @@
+---
+- name: Proxmox VE Nodes & Containers Sequential Update Playbook
+  hosts: proxmox_hosts
+  gather_facts: true
+  become: true
+  serial: 1               # Crucial: updates host and containers strictly 1 node at a time
+  any_errors_fatal: true  # Stops execution if any node encounters an unhandled error
+
+  vars_files:
+    - vars/proxmox_update.yml
+
+  roles:
+    - role: proxmox_update

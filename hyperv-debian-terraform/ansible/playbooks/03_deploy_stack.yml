@@ -1,0 +1,93 @@
+---
+# ansible/playbooks/03_deploy_stack.yml
+# Copies a docker-compose service from the repo to the VM and deploys it.
+# Called by: .github/workflows/docker-deploy.yml
+#
+# Variables (injected by GitHub Actions):
+#   service_name   : name of the docker/ subdirectory (e.g., 'jellyfin')
+#   extra_env_file : optional path to a SOPS-decrypted .env file on the runner
+#
+# SECURITY NOTES:
+#   - Secrets (DB passwords, API keys) are stored in GitHub Secrets / SOPS
+#   - They are written to /etc/homelab/<service>.env on the VM (mode 0600)
+#   - Compose files reference them via env_file — never hardcoded in YAML
+
+- name: Deploy Docker Compose stack
+  hosts: homelab_vms
+  become: true
+  gather_facts: false
+
+  vars:
+    service_name:   "{{ lookup('env', 'SERVICE_NAME') }}"
+    deploy_dir:     "/opt/homelab/stacks/{{ service_name }}"
+    env_file:       "{{ lookup('env', 'EXTRA_ENV_FILE') | default('', true) }}"
+
+  tasks:
+    - name: Validate service name (prevent path traversal)
+      ansible.builtin.assert:
+        that:
+          - service_name | regex_search('^[a-z0-9_-]+$')
+        fail_msg: "service_name '{{ service_name }}' contains invalid characters."
+
+    - name: Create stack directory
+      ansible.builtin.file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        owner: debian
+        group: docker
+        mode: '0750'
+
+    - name: Copy docker-compose.yml to VM
+      ansible.builtin.copy:
+        src: "../../docker/{{ service_name }}/docker-compose.yml"
+        dest: "{{ deploy_dir }}/docker-compose.yml"
+        owner: debian
+        group: docker
+        mode: '0640'
+
+    # Copy any extra files the stack needs (prometheus.yml, grafana provisioning, etc.)
+    - name: Copy supplementary config files if present
+      ansible.builtin.copy:
+        src: "../../docker/{{ service_name }}/"
+        dest: "{{ deploy_dir }}/"
+        owner: debian
+        group: docker
+        mode: '0640'
+      ignore_errors: true
+
+    # Write SOPS-decrypted secrets to VM (never logged, file mode 0600)
+    - name: Write secrets .env file (if provided)
+      ansible.builtin.copy:
+        content: "{{ lookup('file', env_file) }}"
+        dest: "{{ deploy_dir }}/.env"
+        owner: debian
+        group: docker
+        mode: '0600'
+      when: env_file != ''
+      no_log: true    # prevents secrets appearing in Ansible output
+
+    - name: Pull latest Docker images
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: "{{ deploy_dir }}"
+      become_user: debian
+      register: pull_result
+
+    - name: Deploy the stack (up -d)
+      ansible.builtin.command:
+        cmd: docker compose up -d --remove-orphans
+        chdir: "{{ deploy_dir }}"
+      become_user: debian
+      register: up_result
+
+    - name: Show running containers
+      ansible.builtin.command:
+        cmd: docker compose ps
+        chdir: "{{ deploy_dir }}"
+      become_user: debian
+      register: ps_result
+      changed_when: false
+
+    - name: Print stack status
+      ansible.builtin.debug:
+        msg: "{{ ps_result.stdout_lines }}"

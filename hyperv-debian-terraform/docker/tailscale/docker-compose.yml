@@ -1,0 +1,53 @@
+# ─── Tailscale (mesh VPN) ─────────────────────────────────────────────────────
+# Adds the VM to your Tailscale network so you can reach it from anywhere
+# with a static, named address (e.g., debian-server.tail1234.ts.net).
+# Zero open ports — outbound connection to Tailscale coordination server only.
+#
+# Why Tailscale over a regular VPN:
+#   - No VPN server to manage — peer-to-peer when possible (WireGuard under the hood)
+#   - MFA via your identity provider (Google, GitHub, etc.)
+#   - Every device gets a stable IP + DNS name
+#   - Free for up to 3 users / 100 devices
+#
+# Recommended use:
+#   - All admin UIs (Portainer, Grafana, Guacamole) accessible ONLY via Tailscale IP
+#   - Never expose these on Cloudflare Tunnel
+#
+# Setup:
+#   1. tailscale.com → Settings → Keys → Generate auth key (reusable, ephemeral)
+#   2. Store in: secrets/tailscale.env.enc  (SOPS-encrypted)
+#      TS_AUTHKEY=tskey-auth-XXXX
+#   3. docker compose up -d → VM appears in Tailscale admin console
+#   4. On your laptop/phone: install Tailscale app → connect → access VM by name
+
+name: tailscale
+
+services:
+  tailscale:
+    image: tailscale/tailscale:stable
+    container_name: tailscale
+    hostname: debian-server-ts    # name visible in Tailscale admin
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      TS_AUTHKEY: "${TS_AUTHKEY}"              # from SOPS-encrypted secrets/tailscale.env.enc
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"                    # kernel mode for better performance
+      TS_ROUTES: ""                            # advertise subnet routes if needed: 192.168.1.0/24
+      TS_EXTRA_ARGS: "--advertise-exit-node"   # allows using VM as exit node (optional)
+    volumes:
+      - tailscale_state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    network_mode: host              # host network so it can proxy all host services
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.1"
+
+volumes:
+  tailscale_state:

@@ -1,0 +1,107 @@
+# docker-deploy.yml
+# Deploy any homelab Docker Compose service to the VM — pick from a dropdown.
+# Secrets are decrypted from SOPS-encrypted files and written as 0600 .env files.
+
+name: "Docker Deploy"
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to deploy"
+        required: true
+        type: choice
+        options:
+          - portainer
+          - nginx-proxy-manager
+          - pihole
+          - jellyfin
+          - nextcloud
+          - monitoring
+          - uptime-kuma
+          - vaultwarden
+          - immich
+          - wikijs
+          - jupyter
+      action:
+        description: "Action"
+        required: true
+        default: "up"
+        type: choice
+        options: [up, down, restart, pull, logs]
+
+jobs:
+  deploy:
+    name: "Deploy ${{ github.event.inputs.service }}"
+    runs-on: [self-hosted, Linux, homelab]
+    environment: homelab-production   # requires reviewer approval in GitHub Environments
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: which ansible || (sudo apt-get update -qq && sudo apt-get install -y -qq ansible)
+
+      - name: Write SSH private key
+        run: |
+          install -m 600 /dev/null /tmp/homelab_key
+          echo "${{ secrets.DEBIAN_SSH_PRIVATE_KEY }}" > /tmp/homelab_key
+
+      - name: Build dynamic inventory
+        run: |
+          cat > /tmp/inventory_ci.yml <<EOF
+          all:
+            children:
+              homelab_vms:
+                hosts:
+                  debian-server:
+                    ansible_host: ${{ secrets.DEBIAN_VM_IP }}
+                    ansible_user: ${{ secrets.DEBIAN_VM_USER }}
+                    ansible_ssh_private_key_file: /tmp/homelab_key
+          EOF
+
+      # Decrypt service-specific secrets from SOPS-encrypted file if it exists
+      # The decrypted .env is passed to Ansible, which writes it as 0600 on the VM
+      - name: Decrypt service secrets (SOPS)
+        id: secrets
+        run: |
+          ENV_FILE="secrets/${{ github.event.inputs.service }}.env.enc"
+          DECRYPTED="/tmp/${{ github.event.inputs.service }}.env"
+          if [[ -f "$ENV_FILE" ]]; then
+            # SOPS_AGE_KEY is the age private key stored as a GitHub Secret
+            echo "${{ secrets.SOPS_AGE_KEY }}" > /tmp/sops_age_key
+            SOPS_AGE_KEY_FILE=/tmp/sops_age_key sops --decrypt "$ENV_FILE" > "$DECRYPTED"
+            rm -f /tmp/sops_age_key
+            echo "env_file=$DECRYPTED" >> $GITHUB_OUTPUT
+          else
+            echo "No encrypted secrets file found for ${{ github.event.inputs.service }} — skipping"
+            echo "env_file=" >> $GITHUB_OUTPUT
+          fi
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+
+      - name: Run deploy playbook
+        run: |
+          ansible-playbook \
+            -i /tmp/inventory_ci.yml \
+            ansible/playbooks/03_deploy_stack.yml \
+            --diff
+        env:
+          SERVICE_NAME: ${{ github.event.inputs.service }}
+          EXTRA_ENV_FILE: ${{ steps.secrets.outputs.env_file }}
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+
+      - name: Handle alternate actions (down/restart/logs)
+        if: github.event.inputs.action != 'up'
+        run: |
+          ssh -i /tmp/homelab_key \
+              -o StrictHostKeyChecking=accept-new \
+              ${{ secrets.DEBIAN_VM_USER }}@${{ secrets.DEBIAN_VM_IP }} \
+              "cd /opt/homelab/stacks/${{ github.event.inputs.service }} && docker compose ${{ github.event.inputs.action }}"
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -f /tmp/homelab_key /tmp/inventory_ci.yml
+          rm -f /tmp/${{ github.event.inputs.service }}.env

@@ -1,0 +1,18 @@
+# Proxmox API Configuration
+# NOTE: This file is a template. Copy to terraform.tfvars and fill secrets.
+
+# Main endpoint (use Bulakan IP if clustered)
+proxmox_endpoint  = "https://192.168.1.25:8006"
+proxmox_api_token = "root@pam!terraform=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Node Names
+proxmox_node      = "Bulakan"
+cebu_node         = "Cebu"
+
+# Networking & Storage
+default_bridge    = "vmbr0"
+bulakan_datastore = "Bulakan-ZFS"
+cebu_datastore    = "local-lvm"
+
+# Templates
+lxc_template      = "local:vztmpl/debian-12-standard_12.0-1_amd64.tar.zst"

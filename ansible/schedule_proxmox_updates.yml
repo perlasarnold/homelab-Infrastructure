@@ -1,0 +1,108 @@
+---
+- name: Schedule Automated Proxmox Sequential Updates (3rd Sunday at 2 AM Pacific)
+  hosts: proxmox_hosts
+  become: true
+  gather_facts: true
+
+  vars:
+    # Location of your ansible repository on the Proxmox host
+    ansible_dir: "/root/homelab/ansible"
+    
+    # Timezone for schedule execution
+    timezone: "America/Los_Angeles"
+    
+    # Schedule type: 'cron', 'systemd', or 'both'
+    schedule_type: "both"
+
+    # Schedule: 3rd Sunday of every month at 02:00 AM Pacific Time
+    # Days 15-21 are guaranteed to contain the 3rd Sunday of any month
+    cron_minute: "0"
+    cron_hour: "2"
+    cron_day: "15-21"
+
+  tasks:
+    - name: Ensure host timezone is set to America/Los_Angeles (Pacific Time)
+      timezone:
+        name: "{{ timezone }}"
+      ignore_errors: true
+
+    - name: Configure Cron Schedule (3rd Sunday of the Month at 02:00 AM)
+      block:
+        - name: Ensure cron package is installed
+          apt:
+            name: cron
+            state: present
+
+        - name: Ensure cron service is running and enabled
+          service:
+            name: cron
+            state: started
+            enabled: yes
+
+        - name: Setup 3rd Sunday of the month Proxmox update cronjob
+          cron:
+            name: "Automated Proxmox Sequential Updates (3rd Sunday)"
+            minute: "{{ cron_minute }}"
+            hour: "{{ cron_hour }}"
+            day: "{{ cron_day }}"
+            month: "*"
+            weekday: "*"
+            user: "root"
+            job: "test $(date +\\%u) -eq 7 && cd {{ ansible_dir }} && ./run_update.sh >> /var/log/proxmox-cron-updates.log 2>&1"
+            state: present
+      when: schedule_type in ['cron', 'both']
+
+    - name: Configure Systemd Timer Schedule (3rd Sunday of the Month at 02:00 AM Pacific)
+      block:
+        - name: Create systemd update service unit
+          copy:
+            dest: /etc/systemd/system/proxmox-update.service
+            content: |
+              [Unit]
+              Description=Automated Proxmox VE Nodes and Guest Containers Update
+              After=network.target
+
+              [Service]
+              Type=oneshot
+              WorkingDirectory={{ ansible_dir }}
+              ExecStart={{ ansible_dir }}/run_update.sh
+              StandardOutput=append:/var/log/proxmox-cron-updates.log
+              StandardError=append:/var/log/proxmox-cron-updates.log
+            mode: '0644'
+
+        - name: Create systemd update timer unit (3rd Sunday 02:00 AM Pacific)
+          copy:
+            dest: /etc/systemd/system/proxmox-update.timer
+            content: |
+              [Unit]
+              Description=Run Proxmox Update every 3rd Sunday of the month at 2 AM Pacific
+
+              [Timer]
+              OnCalendar=Sun *-*-15..21 02:00:00 {{ timezone }}
+              Persistent=true
+
+              [Install]
+              WantedBy=timers.target
+            mode: '0644'
+
+        - name: Reload systemd daemon
+          systemd:
+            daemon_reload: yes
+
+        - name: Enable and start systemd update timer
+          systemd:
+            name: proxmox-update.timer
+            enabled: yes
+            state: started
+      when: schedule_type in ['systemd', 'both']
+
+    - name: Display schedule confirmation
+      debug:
+        msg:
+          - "=========================================================================="
+          - " Automated Proxmox updates successfully scheduled!"
+          - " Frequency : Every 3rd Sunday of the Month at 02:00 AM (Pacific Time)"
+          - " Timezone  : {{ timezone }}"
+          - " Command    : cd {{ ansible_dir }} && ./run_update.sh"
+          - " Log File  : /var/log/proxmox-cron-updates.log"
+          - "=========================================================================="

@@ -1,0 +1,27 @@
+# ─── Nginx Proxy Manager ──────────────────────────────────────────────────────
+# GUI-based reverse proxy — manage SSL certs (Let's Encrypt) and routing
+# without touching nginx configs directly.
+# Access admin: http://<VM-IP>:81
+# Default login: admin@example.com / changeme  (change immediately!)
+# r/homelab rating: ★★★★★  go-to reverse proxy for beginners
+
+name: nginx-proxy-manager
+
+services:
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - "80:80"     # HTTP (public-facing)
+      - "443:443"   # HTTPS (public-facing)
+      - "81:81"     # Admin UI
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    environment:
+      - DISABLE_IPV6=true   # Remove if your network uses IPv6
+
+volumes:
+  npm_data:
+  npm_letsencrypt:

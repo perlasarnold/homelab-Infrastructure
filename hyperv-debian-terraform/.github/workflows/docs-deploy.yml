@@ -1,0 +1,46 @@
+# docs-deploy.yml
+# Builds MkDocs site and deploys to GitHub Pages on every push to main.
+# The live docs site becomes the public guide at: https://YOU.github.io/hyperv-debian-terraform
+
+name: "Deploy Docs to GitHub Pages"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to push to gh-pages branch
+
+jobs:
+  deploy-docs:
+    name: "Build & Deploy MkDocs"
+    runs-on: ubuntu-latest   # MkDocs build on GitHub-hosted runner (no self-hosted needed)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for git-revision-date plugin
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install MkDocs + Material theme
+        run: |
+          pip install \
+            mkdocs-material \
+            mkdocs-minify-plugin \
+            --quiet
+
+      - name: Build and deploy to gh-pages branch
+        run: mkdocs gh-deploy --force --clean --verbose
+        working-directory: .
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

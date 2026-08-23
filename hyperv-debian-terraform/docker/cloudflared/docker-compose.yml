@@ -1,0 +1,51 @@
+# ─── Cloudflare Tunnel (cloudflared) ─────────────────────────────────────────
+# Exposes your self-hosted services to the internet via Cloudflare's edge.
+# Zero open inbound ports — all traffic is outbound from cloudflared to Cloudflare.
+#
+# Recommended architecture (Cloudflare Tunnels + Tailscale):
+#   ┌─────────────────────────────────────────────────────────────┐
+#   │  Internet                                                   │
+#   │  wiki.yourdomain.com ──► Cloudflare Edge                    │
+#   │                               │ (encrypted tunnel)          │
+#   │                               ▼                             │
+#   │  VM: cloudflared ──────────► Wiki.js :3005                  │
+#   │                                                             │
+#   │  Your devices (Tailscale VPN)                               │
+#   │  laptop ──────────────────► Guacamole :8085 (private only)  │
+#   │  phone  ──────────────────► Portainer :9000 (private only)  │
+#   └─────────────────────────────────────────────────────────────┘
+#
+# Public via Cloudflare Tunnel:  Wiki.js, Vaultwarden, Nextcloud
+# Private via Tailscale only:    Guacamole, Portainer, Grafana, Prometheus
+#
+# Setup:
+#   1. dash.cloudflare.com → Zero Trust → Networks → Tunnels → Create tunnel
+#   2. Name it "homelab", copy the token
+#   3. Store token in: secrets/cloudflared.env.enc  (SOPS-encrypted)
+#      TUNNEL_TOKEN=eyJhIjoiXXX...
+#   4. Add tunnel routes in Cloudflare dashboard:
+#      wiki.yourdomain.com  → http://wikijs:3000
+#      vault.yourdomain.com → http://vaultwarden:80
+#   5. Set Cloudflare Access policies for extra authentication (free tier available)
+
+name: cloudflared
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: "${TUNNEL_TOKEN}"   # from SOPS-encrypted secrets/cloudflared.env.enc
+    networks:
+      - homelab-net       # shared with Wiki.js, Vaultwarden, Nextcloud
+    deploy:
+      resources:
+        limits:
+          memory: 64M     # extremely lightweight
+          cpus: "0.1"
+
+networks:
+  homelab-net:
+    external: true        # created by: docker network create homelab-net

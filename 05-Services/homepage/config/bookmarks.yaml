@@ -1,0 +1,43 @@
+---
+# Homepage Bookmarks Configuration
+
+- Infrastructure & Cloud:
+    - GitHub:
+        - icon: github.png
+          href: https://github.com/
+    - Docker Hub:
+        - icon: docker.png
+          href: https://hub.docker.com/
+    - Proxmox Forum:
+        - icon: proxmox.png
+          href: https://forum.proxmox.com/
+    - Cloudflare:
+        - icon: cloudflare.png
+          href: https://dash.cloudflare.com/
+    - Digital Plat:
+        - icon: cloudflare.png
+          href: https://dashboard.digitalplat.org/
+
+- Certifications & Learning:
+    - Whizlabs:
+        - icon: school.png
+          href: https://www.whizlabs.com/
+    - SkillCertPro:
+        - icon: chrome.png
+          href: https://skillcertpro.com/
+
+- Developer & Media Resources:
+    - Free For Dev:
+        - icon: github.png
+          href: https://free-for.dev/#/
+    - Z-Library:
+        - icon: bookstack.png
+          href: https://z-library.im/
+    - AudiobookBay:
+        - icon: audiobookshelf.png
+          href: https://audiobookbay.lu/
+
+- Homelab Documentation:
+    - Homelab GitHub Repo:
+        - icon: github.png
+          href: https://github.com/Perlas/homelab

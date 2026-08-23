@@ -1,0 +1,83 @@
+# terraform-plan.yml
+# Triggered on Pull Requests to main.
+# Runs terraform plan so reviewers can see infrastructure changes before merge.
+
+name: "Terraform Plan"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "terraform/**"
+
+jobs:
+  plan:
+    name: "Terraform Plan"
+    runs-on: [self-hosted, Windows, hyperv]  # Must run on your local Windows host
+
+    defaults:
+      run:
+        working-directory: terraform
+        shell: pwsh
+
+    env:
+      TF_VAR_winrm_username: ${{ secrets.WINRM_USERNAME }}
+      TF_VAR_winrm_password: ${{ secrets.WINRM_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Write the WinRM CA cert from secret to the path expected by variables.tf
+      - name: Write WinRM CA cert
+        shell: pwsh
+        run: |
+          $certBytes = [System.Convert]::FromBase64String("${{ secrets.WINRM_CACERT_B64 }}")
+          $certPath  = "${{ github.workspace }}\setup\winrm_cacert.pem"
+          New-Item -ItemType Directory -Force -Path (Split-Path $certPath) | Out-Null
+          [System.IO.File]::WriteAllBytes($certPath, $certBytes)
+          echo "Cert written to $certPath"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.9"
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan `
+            -var "winrm_cacert_path=${{ github.workspace }}\setup\winrm_cacert.pem" `
+            -input=false `
+            -out=tfplan
+        continue-on-error: true
+
+      - name: Comment plan on PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const output = `#### Terraform Plan 📋\`${{ steps.plan.outcome }}\`
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${{ steps.plan.outputs.stdout }}
+            \`\`\`
+
+            </details>`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fail if plan failed
+        if: steps.plan.outcome == 'failure'
+        run: exit 1

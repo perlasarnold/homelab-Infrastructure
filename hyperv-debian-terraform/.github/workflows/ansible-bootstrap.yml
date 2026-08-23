@@ -1,0 +1,90 @@
+# ansible-bootstrap.yml
+# Run after terraform-apply creates the VM.
+# Executes all Ansible playbooks in sequence to fully configure the VM.
+# This is the "provision" step: OS hardening → Docker install → maintenance setup.
+
+name: "Ansible Bootstrap VM"
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Hypervisor (hyperv | proxmox)"
+        required: true
+        default: "proxmox"
+        type: choice
+        options: [hyperv, proxmox]
+      playbooks:
+        description: "Playbooks to run (comma-separated, default: all)"
+        required: false
+        default: "01,02,04"
+
+jobs:
+  bootstrap:
+    name: "Bootstrap Debian VM"
+    runs-on: [self-hosted, Linux, homelab]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          which ansible || (sudo apt-get update -qq && sudo apt-get install -y -qq ansible)
+          ansible --version
+
+      - name: Install Ansible community.general collection
+        run: ansible-galaxy collection install community.general --upgrade
+
+      - name: Write SSH private key
+        run: |
+          install -m 600 /dev/null /tmp/homelab_key
+          echo "${{ secrets.DEBIAN_SSH_PRIVATE_KEY }}" > /tmp/homelab_key
+
+      - name: Build dynamic inventory
+        run: |
+          cat > ansible/inventory_ci.yml <<EOF
+          all:
+            children:
+              homelab_vms:
+                hosts:
+                  debian-server:
+                    ansible_host: ${{ secrets.DEBIAN_VM_IP }}
+                    ansible_user: ${{ secrets.DEBIAN_VM_USER }}
+                    ansible_ssh_private_key_file: /tmp/homelab_key
+          EOF
+
+      - name: Run playbook 01 — Bootstrap & SSH hardening
+        if: contains(github.event.inputs.playbooks, '01')
+        run: |
+          ansible-playbook \
+            -i ansible/inventory_ci.yml \
+            ansible/playbooks/01_bootstrap.yml \
+            --diff
+        env:
+          HOMELAB_USER: ${{ secrets.DEBIAN_VM_USER }}
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+
+      - name: Run playbook 02 — Install Docker
+        if: contains(github.event.inputs.playbooks, '02')
+        run: |
+          ansible-playbook \
+            -i ansible/inventory_ci.yml \
+            ansible/playbooks/02_install_docker.yml \
+            --diff
+        env:
+          HOMELAB_USER: ${{ secrets.DEBIAN_VM_USER }}
+
+      - name: Run playbook 04 — Setup maintenance & cron
+        if: contains(github.event.inputs.playbooks, '04')
+        run: |
+          ansible-playbook \
+            -i ansible/inventory_ci.yml \
+            ansible/playbooks/04_maintenance.yml \
+            --diff
+        env:
+          HOMELAB_USER: ${{ secrets.DEBIAN_VM_USER }}
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f /tmp/homelab_key ansible/inventory_ci.yml

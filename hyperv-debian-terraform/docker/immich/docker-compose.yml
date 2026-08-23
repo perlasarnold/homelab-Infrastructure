@@ -1,0 +1,63 @@
+# ─── Immich ───────────────────────────────────────────────────────────────────
+# Self-hosted Google Photos replacement. Facial recognition, albums, mobile backup.
+# Access: http://<VM-IP>:2283
+# r/homelab rating: ★★★★★  fastest-growing homelab project on GitHub 2023-2025
+#
+# ⚠️  DB_PASSWORD must match between immich-server and immich-postgres.
+# ⚠️  Change UPLOAD_LOCATION to where you want photos stored on the VM.
+# ⚠️  Immich updates frequently — always check https://immich.app/docs for breaking changes.
+
+name: immich
+
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich-server
+    restart: unless-stopped
+    ports:
+      - "2283:2283"
+    depends_on:
+      - immich-redis
+      - immich-postgres
+    volumes:
+      - ${UPLOAD_LOCATION:-/data/immich/upload}:/usr/src/app/upload
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      DB_HOSTNAME:    immich-postgres
+      DB_USERNAME:    immich
+      DB_PASSWORD:    "immich_change_me"
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: immich-redis
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:release
+    container_name: immich-ml
+    restart: unless-stopped
+    volumes:
+      - immich_ml_cache:/cache
+    environment:
+      DB_HOSTNAME:    immich-postgres
+      DB_USERNAME:    immich
+      DB_PASSWORD:    "immich_change_me"
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: immich-redis
+
+  immich-redis:
+    image: redis:7-alpine
+    container_name: immich-redis
+    restart: unless-stopped
+
+  immich-postgres:
+    image: tensorchord/pgvecto-rs:pg16-v0.2.0   # pgvector required for face recognition
+    container_name: immich-postgres
+    restart: unless-stopped
+    volumes:
+      - immich_pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER:     immich
+      POSTGRES_PASSWORD: "immich_change_me"
+      POSTGRES_DB:       immich
+
+volumes:
+  immich_ml_cache:
+  immich_pg_data:

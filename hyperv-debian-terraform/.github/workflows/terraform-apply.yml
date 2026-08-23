@@ -1,0 +1,56 @@
+# terraform-apply.yml
+# Triggered on push to main (or manually).
+# Applies the Terraform plan to create/update the Hyper-V VM.
+
+name: "Terraform Apply"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+  workflow_dispatch:   # Allow manual trigger from GitHub UI
+
+jobs:
+  apply:
+    name: "Terraform Apply"
+    runs-on: [self-hosted, Windows, hyperv]
+
+    defaults:
+      run:
+        working-directory: terraform
+        shell: pwsh
+
+    env:
+      TF_VAR_winrm_username: ${{ secrets.WINRM_USERNAME }}
+      TF_VAR_winrm_password: ${{ secrets.WINRM_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Write WinRM CA cert
+        shell: pwsh
+        run: |
+          $certBytes = [System.Convert]::FromBase64String("${{ secrets.WINRM_CACERT_B64 }}")
+          $certPath  = "${{ github.workspace }}\setup\winrm_cacert.pem"
+          New-Item -ItemType Directory -Force -Path (Split-Path $certPath) | Out-Null
+          [System.IO.File]::WriteAllBytes($certPath, $certBytes)
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.9"
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        run: |
+          terraform apply `
+            -var "winrm_cacert_path=${{ github.workspace }}\setup\winrm_cacert.pem" `
+            -auto-approve `
+            -input=false
+
+      - name: Show Outputs
+        run: terraform output

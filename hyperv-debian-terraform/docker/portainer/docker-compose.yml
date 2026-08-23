@@ -1,0 +1,25 @@
+# ─── Portainer CE ─────────────────────────────────────────────────────────────
+# Docker management web UI — the first thing every homelabber installs.
+# Access: http://<VM-IP>:9000  (set admin password on first visit)
+# r/homelab rating: ★★★★★  nearly universal
+
+name: portainer
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    ports:
+      - "9000:9000"   # HTTP UI
+      - "9443:9443"   # HTTPS UI (self-signed cert)
+      - "8000:8000"   # Edge agent tunnel (optional)
+
+volumes:
+  portainer_data:

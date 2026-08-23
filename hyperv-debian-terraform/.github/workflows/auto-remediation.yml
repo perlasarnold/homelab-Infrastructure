@@ -1,0 +1,82 @@
+# auto-remediation.yml
+# Runs the Python health check every hour. If issues found, runs Ansible
+# remediation playbook and uploads a JSON report as an artifact.
+# GitHub will send email if the job fails (CRITICAL issue found).
+
+name: "Auto-Remediation"
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # every hour
+  workflow_dispatch:
+    inputs:
+      remediate:
+        description: "Auto-fix problems found?"
+        type: boolean
+        default: true
+
+jobs:
+  health-check:
+    name: "Server Health Check & Remediation"
+    runs-on: [self-hosted, Linux, homelab]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python dependencies
+        run: pip install paramiko rich --quiet
+
+      - name: Write SSH key
+        run: |
+          install -m 600 /dev/null /tmp/homelab_key
+          echo "${{ secrets.DEBIAN_SSH_PRIVATE_KEY }}" > /tmp/homelab_key
+
+      - name: Run health check script
+        id: health
+        run: |
+          REMEDIATE_FLAG=""
+          if [[ "${{ github.event.inputs.remediate }}" != "false" ]]; then
+            REMEDIATE_FLAG="--remediate"
+          fi
+          python notebooks/server_health.py \
+            --host "${{ secrets.DEBIAN_VM_IP }}" \
+            --user "${{ secrets.DEBIAN_VM_USER }}" \
+            --key  /tmp/homelab_key \
+            $REMEDIATE_FLAG
+        continue-on-error: true   # upload report even on failure
+
+      - name: Upload health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-report-${{ github.run_id }}
+          path: /tmp/health-report.json
+          retention-days: 30   # auto-deleted after 30 days (storage efficient)
+
+      - name: Run Ansible remediation if health check flagged problems
+        if: steps.health.outcome == 'failure'
+        run: |
+          install -m 600 /dev/null /tmp/inv.yml
+          cat > /tmp/inv.yml <<EOF
+          all:
+            children:
+              homelab_vms:
+                hosts:
+                  debian-server:
+                    ansible_host: ${{ secrets.DEBIAN_VM_IP }}
+                    ansible_user: ${{ secrets.DEBIAN_VM_USER }}
+                    ansible_ssh_private_key_file: /tmp/homelab_key
+          EOF
+          ansible-playbook -i /tmp/inv.yml ansible/playbooks/05_remediation.yml
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+
+      - name: Clean up (always runs — no leftover keys)
+        if: always()
+        run: rm -f /tmp/homelab_key /tmp/inv.yml
+
+      - name: Fail job if CRITICAL issues remain unfixed
+        if: steps.health.outcome == 'failure'
+        run: |
+          echo "CRITICAL issues detected. Check the uploaded health report artifact."
+          exit 1

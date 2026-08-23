@@ -1,0 +1,15 @@
+---
+- search:
+    provider: duckduckgo
+    target: _blank
+
+- clock:
+    format: "h:mm:ss A"
+
+- greeting:
+    text_size: xl
+
+- resources:
+    cpu: true
+    memory: true
+    disk: /

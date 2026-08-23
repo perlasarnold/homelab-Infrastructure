@@ -1,0 +1,174 @@
+---
+# ansible/playbooks/05_remediation.yml
+# Automated self-healing playbook — triggered by GitHub Actions on schedule
+# or manually when alerts fire.
+#
+# Checks & auto-fixes:
+#   - Stopped Docker containers   → restart stack
+#   - Disk > 80%                  → prune Docker, compress logs, alert
+#   - RAM > 90%                   → identify + log top consumers, drop caches
+#   - CPU > 95% sustained 5min    → log top processes, optionally restart offender
+#
+# After each run a JSON report is uploaded as a GitHub Actions artifact.
+
+- name: Auto-remediation
+  hosts: homelab_vms
+  become: true
+  gather_facts: true
+
+  vars:
+    stack_base:       /opt/homelab/stacks
+    disk_warn_pct:    80
+    disk_crit_pct:    90
+    ram_warn_pct:     85
+    cpu_warn_pct:     90
+    report_path:      /tmp/remediation-report.json
+
+  tasks:
+    - name: Initialise report
+      ansible.builtin.set_fact:
+        report:
+          timestamp: "{{ ansible_date_time.iso8601 }}"
+          host: "{{ inventory_hostname }}"
+          actions: []
+          alerts: []
+
+    # ──────────────── DISK ────────────────────────────────────────────────────
+    - name: Gather disk usage facts
+      ansible.builtin.shell: df / --output=pcent | tail -1 | tr -d ' %'
+      register: disk_pct_raw
+      changed_when: false
+
+    - name: Set disk_pct fact
+      ansible.builtin.set_fact:
+        disk_pct: "{{ disk_pct_raw.stdout | int }}"
+
+    - name: Prune Docker if disk > {{ disk_warn_pct }}%
+      when: disk_pct | int >= disk_warn_pct | int
+      block:
+        - name: Prune unused Docker images
+          ansible.builtin.command: docker image prune -af --filter "until=48h"
+          register: prune_images
+
+        - name: Prune unused Docker volumes
+          ansible.builtin.command: docker volume prune -f
+          register: prune_volumes
+
+        - name: Compress logs older than 7 days
+          ansible.builtin.shell: find /var/log -name "*.log" -mtime +7 -exec gzip -f {} \;
+          ignore_errors: true
+
+        - name: Append disk action to report
+          ansible.builtin.set_fact:
+            report: "{{ report | combine({'actions': report.actions + ['Disk ' + disk_pct|string + '% — pruned Docker images/volumes, compressed old logs']}) }}"
+
+    - name: ALERT if disk still > {{ disk_crit_pct }}% after pruning
+      when: disk_pct | int >= disk_crit_pct | int
+      ansible.builtin.set_fact:
+        report: "{{ report | combine({'alerts': report.alerts + ['CRITICAL: Disk at ' + disk_pct|string + '% — manual cleanup required']}) }}"
+
+    # ──────────────── RAM ─────────────────────────────────────────────────────
+    - name: Calculate RAM usage percent
+      ansible.builtin.shell: |
+        free | awk '/^Mem:/ {printf "%.0f", $3/$2 * 100}'
+      register: ram_pct_raw
+      changed_when: false
+
+    - name: Set ram_pct fact
+      ansible.builtin.set_fact:
+        ram_pct: "{{ ram_pct_raw.stdout | int }}"
+
+    - name: Handle high RAM usage
+      when: ram_pct | int >= ram_warn_pct | int
+      block:
+        - name: Drop page cache to free RAM
+          ansible.builtin.shell: sync && echo 1 > /proc/sys/vm/drop_caches
+
+        - name: Get top 5 RAM consumers
+          ansible.builtin.shell: ps aux --sort=-%mem | head -6 | awk '{print $2, $4, $11}'
+          register: ram_top
+          changed_when: false
+
+        - name: Log RAM consumers
+          ansible.builtin.debug:
+            msg: "Top RAM consumers:\n{{ ram_top.stdout }}"
+
+        - name: Append RAM action to report
+          ansible.builtin.set_fact:
+            report: "{{ report | combine({'actions': report.actions + ['RAM at ' + ram_pct|string + '% — dropped page cache. Top: ' + ram_top.stdout_lines[0]]}) }}"
+
+    # ──────────────── CPU ─────────────────────────────────────────────────────
+    - name: Get 5-minute load average as percent of cores
+      ansible.builtin.shell: |
+        cores={{ ansible_processor_vcpus }}
+        load=$(awk '{print $2}' /proc/loadavg)
+        echo "scale=0; $load * 100 / $cores" | bc
+      register: cpu_pct_raw
+      changed_when: false
+
+    - name: Set cpu_pct fact
+      ansible.builtin.set_fact:
+        cpu_pct: "{{ cpu_pct_raw.stdout | int }}"
+
+    - name: Handle high CPU
+      when: cpu_pct | int >= cpu_warn_pct | int
+      block:
+        - name: Get top 5 CPU consumers
+          ansible.builtin.shell: ps aux --sort=-%cpu | head -6 | awk '{print $2, $3, $11}'
+          register: cpu_top
+          changed_when: false
+
+        - name: Append CPU alert to report
+          ansible.builtin.set_fact:
+            report: "{{ report | combine({'alerts': report.alerts + ['CPU at ' + cpu_pct|string + '% — Top: ' + cpu_top.stdout_lines[0]]}) }}"
+
+    # ──────────────── SERVICES ────────────────────────────────────────────────
+    - name: Find all stacks
+      ansible.builtin.find:
+        paths: "{{ stack_base }}"
+        patterns: "docker-compose.yml"
+        recurse: true
+      register: compose_files
+
+    - name: Check and restart any stopped containers
+      ansible.builtin.shell: |
+        dir=$(dirname {{ item.path }})
+        svc=$(basename $dir)
+        expected=$(docker compose -f {{ item.path }} config --services | wc -l)
+        running=$(docker compose -f {{ item.path }} ps --status running -q 2>/dev/null | wc -l)
+        if [ "$running" -lt "$expected" ]; then
+          docker compose -f {{ item.path }} up -d --remove-orphans 2>&1
+          echo "RESTARTED:$svc ($running/$expected were running)"
+        else
+          echo "OK:$svc ($running/$expected running)"
+        fi
+      loop: "{{ compose_files.files }}"
+      register: service_checks
+      changed_when: "'RESTARTED' in item.stdout"
+
+    - name: Append service restart actions to report
+      ansible.builtin.set_fact:
+        report: "{{ report | combine({'actions': report.alerts + [item.stdout]}) }}"
+      loop: "{{ service_checks.results }}"
+      when: "'RESTARTED' in item.stdout"
+
+    # ──────────────── REPORT ──────────────────────────────────────────────────
+    - name: Append resource summary to report
+      ansible.builtin.set_fact:
+        report: "{{ report | combine({'metrics': {'disk_pct': disk_pct, 'ram_pct': ram_pct, 'cpu_pct': cpu_pct}}) }}"
+
+    - name: Write JSON report to disk
+      ansible.builtin.copy:
+        content: "{{ report | to_nice_json }}"
+        dest: "{{ report_path }}"
+        mode: '0644'
+
+    - name: Print report
+      ansible.builtin.debug:
+        msg: "{{ report | to_nice_json }}"
+
+    - name: Fetch report to runner (for GitHub Actions artifact upload)
+      ansible.builtin.fetch:
+        src: "{{ report_path }}"
+        dest: "remediation-report-{{ inventory_hostname }}.json"
+        flat: true

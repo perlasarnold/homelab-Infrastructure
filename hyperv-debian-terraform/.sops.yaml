@@ -1,0 +1,21 @@
+# .sops.yaml
+# SOPS (Secrets OPerationS) configuration.
+# Secrets are encrypted with age (modern, simple key management).
+# Encrypted files live in secrets/ — safe to commit.
+# Private key lives ONLY in GitHub Secrets (SOPS_AGE_KEY) — never in repo.
+#
+# Setup (one-time):
+#   1. Install age:   apt install age  OR  brew install age
+#   2. Generate key:  age-keygen -o ~/.config/sops/age/keys.txt
+#   3. Copy the "public key" line (age1...) into .sops.yaml below
+#   4. Copy the full keys.txt content into GitHub Secret: SOPS_AGE_KEY
+#   5. To encrypt a new secret file:
+#        sops --encrypt secrets/wikijs.env > secrets/wikijs.env.enc
+#   6. To edit in-place:
+#        SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt sops secrets/wikijs.env.enc
+
+creation_rules:
+  - path_regex: ^secrets/.*\.enc$
+    age: >-
+      age1REPLACE_WITH_YOUR_PUBLIC_KEY
+    encrypted_regex: ".*"

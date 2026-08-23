@@ -1,0 +1,86 @@
+---
+- name: Log host update start
+  lineinfile:
+    path: "{{ proxmox_update_log_path }}"
+    line: "[HOST {{ inventory_hostname }}] Starting Proxmox VE host update"
+
+- name: Check PVE repository configuration
+  block:
+    - name: Disable PVE enterprise repository if subscription key is not present
+      lineinfile:
+        path: /etc/apt/sources.list.d/pve-enterprise.list
+        regexp: '^deb https://enterprise.proxmox.com/debian/pve'
+        line: '# deb https://enterprise.proxmox.com/debian/pve bookworm pve-enterprise'
+        state: present
+      ignore_errors: true
+
+    - name: Ensure PVE no-subscription repository is configured
+      apt_repository:
+        repo: "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription"
+        state: present
+        filename: pve-no-subscription
+      ignore_errors: true
+  when: proxmox_host_repo_type == "no-subscription"
+
+- name: Update APT package cache on Proxmox node
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  register: host_apt_update
+
+- name: Perform dist-upgrade on Proxmox node
+  apt:
+    upgrade: dist
+    autoclean: yes
+    autoremove: yes
+  register: host_apt_upgrade
+
+- name: Check if host reboot is required
+  stat:
+    path: /var/run/reboot-required
+  register: host_reboot_required
+
+- name: Log host upgrade outcome
+  lineinfile:
+    path: "{{ proxmox_update_log_path }}"
+    line: "[HOST {{ inventory_hostname }}] Host packages upgraded. Reboot required: {{ 'YES' if host_reboot_required.stat.exists else 'NO' }}"
+
+- name: Reboot host if required and auto_reboot is enabled
+  block:
+    - name: Log host reboot start
+      lineinfile:
+        path: "{{ proxmox_update_log_path }}"
+        line: "[HOST {{ inventory_hostname }}] Initiating host reboot..."
+
+    - name: Reboot Proxmox node
+      reboot:
+        msg: "Rebooting Proxmox host {{ inventory_hostname }} due to kernel/package updates"
+        connect_timeout: 10
+        reboot_timeout: "{{ proxmox_reboot_timeout_seconds }}"
+        pre_reboot_delay: 5
+        post_reboot_delay: 30
+        test_command: pvesh get /nodes/$(hostname)/status
+
+    - name: Verify cluster quorum after reboot (if clustered)
+      shell: pvecm status
+      register: pvecm_check
+      changed_when: false
+      failed_when: false
+      retries: 6
+      delay: 10
+      until: "'Quorate: Yes' in pvecm_check.stdout or 'standalone' in pvecm_check.stdout or pvecm_check.rc != 0"
+
+    - name: Log host reboot completion
+      lineinfile:
+        path: "{{ proxmox_update_log_path }}"
+        line: "[HOST {{ inventory_hostname }}] Host successfully rebooted and online"
+  when:
+    - host_reboot_required.stat.exists
+    - proxmox_auto_reboot | default(false) | bool
+
+- name: Warn if host reboot is required but auto_reboot is disabled
+  debug:
+    msg: "WARNING: Proxmox node {{ inventory_hostname }} requires a reboot to apply kernel updates, but auto_reboot is set to false."
+  when:
+    - host_reboot_required.stat.exists
+    - not (proxmox_auto_reboot | default(false) | bool)

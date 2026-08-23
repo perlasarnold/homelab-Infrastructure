@@ -1,0 +1,111 @@
+---
+- name: Parse VM entry
+  set_fact:
+    vm_id: "{{ vm_entry.split('|')[0] }}"
+    vm_name: "{{ vm_entry.split('|')[1] }}"
+
+- name: Check if VM is excluded
+  set_fact:
+    vm_excluded: "{{ vm_id | int in proxmox_exclude_vms or vm_id in proxmox_exclude_vms }}"
+
+- name: Skip excluded VM
+  debug:
+    msg: "Skipping excluded VM {{ vm_id }} ({{ vm_name }}) - in exclusion list"
+  when: vm_excluded
+
+- name: Process VM {{ vm_id }} ({{ vm_name }})
+  block:
+    - name: Log VM update start
+      lineinfile:
+        path: "{{ proxmox_update_log_path }}"
+        line: "[VM {{ vm_id }} {{ vm_name }}] Starting update process"
+
+    - name: Verify QEMU Guest Agent is running
+      shell: "qm guest cmd {{ vm_id }} ping"
+      register: vm_guest_agent_check
+      ignore_errors: true
+
+    - name: Skip VM without active guest agent
+      block:
+        - lineinfile:
+            path: "{{ proxmox_update_log_path }}"
+            line: "[VM {{ vm_id }} {{ vm_name }}] QEMU Guest Agent not responding - SKIPPING guest package update"
+        - debug:
+            msg: "Skipping VM {{ vm_id }} ({{ vm_name }}): QEMU Guest Agent is not active."
+      when: vm_guest_agent_check.rc != 0
+
+    - name: Run VM package update via guest agent
+      block:
+        - name: Create pre-update VM snapshot with memory state
+          shell: "qm snapshot {{ vm_id }} pre-update-{{ ansible_date_time.epoch }} --vmstate 1 --description 'Automated update snapshot'"
+          register: vm_snapshot
+          retries: 3
+          delay: 10
+          until: vm_snapshot.rc == 0
+
+        - name: Run system update inside VM
+          shell: "qm guest exec {{ vm_id }} -- bash -c '{{ proxmox_distro_commands.debian }}'"
+          register: vm_update_result
+          ignore_errors: true
+          async: "{{ proxmox_update_timeout_minutes * 60 }}"
+          poll: 10
+
+        - name: Wait for health check delay
+          pause:
+            seconds: "{{ proxmox_health_check_delay_seconds }}"
+          when: vm_update_result.rc == 0
+
+        - name: Verify VM is still running
+          shell: "qm status {{ vm_id }} | grep -q running"
+          register: vm_health_check
+          ignore_errors: true
+          when: vm_update_result.rc == 0
+
+        - name: VM update successful
+          block:
+            - name: Log VM update success
+              lineinfile:
+                path: "{{ proxmox_update_log_path }}"
+                line: "[VM {{ vm_id }} {{ vm_name }}] Update completed successfully"
+
+            - name: Check if reboot required inside VM
+              shell: "qm guest exec {{ vm_id }} -- bash -c 'test -f /var/run/reboot-required && echo required || echo not_required'"
+              register: vm_reboot_check
+              ignore_errors: true
+
+            - name: Log reboot status
+              lineinfile:
+                path: "{{ proxmox_update_log_path }}"
+                line: "[VM {{ vm_id }} {{ vm_name }}] Reboot required: {{ 'YES' if (vm_reboot_check.stdout | default('') == 'required') else 'NO' }}"
+              when: vm_reboot_check.rc == 0
+
+          when:
+            - vm_update_result.rc == 0
+            - vm_health_check.rc | default(1) == 0
+
+        - name: VM update failed - rollback
+          block:
+            - name: Log VM update failure
+              lineinfile:
+                path: "{{ proxmox_update_log_path }}"
+                line: "[VM {{ vm_id }} {{ vm_name }}] UPDATE FAILED - ROLLING BACK TO SNAPSHOT"
+
+            - name: Rollback VM to pre-update snapshot
+              shell: "qm rollback {{ vm_id }} pre-update-{{ ansible_date_time.epoch }}"
+              register: vm_rollback_result
+
+            - name: Restart VM after rollback
+              shell: "qm start {{ vm_id }}"
+              ignore_errors: true
+
+            - name: Log VM rollback complete
+              lineinfile:
+                path: "{{ proxmox_update_log_path }}"
+                line: "[VM {{ vm_id }} {{ vm_name }}] Rollback completed successfully"
+
+          when:
+            - vm_update_result.rc != 0 or (vm_health_check.rc | default(1) != 0)
+
+      when: vm_guest_agent_check.rc == 0
+
+  when: not vm_excluded

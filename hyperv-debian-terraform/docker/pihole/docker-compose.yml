@@ -1,0 +1,34 @@
+# ─── Pi-hole ──────────────────────────────────────────────────────────────────
+# Network-wide DNS ad blocker. Point your router's DNS at the VM IP.
+# Access: http://<VM-IP>/admin
+# r/homelab rating: ★★★★★  arguably the #1 most recommended homelab service
+#
+# ⚠️  Port 53 must be free. If systemd-resolved is running on the host:
+#     sudo systemctl disable --now systemd-resolved
+#     echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+
+name: pihole
+
+services:
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8080:80/tcp"     # Web UI (avoid conflict with NPM on port 80)
+    environment:
+      TZ: America/Los_Angeles           # ← change to your timezone
+      WEBPASSWORD: "changeme"           # ← set a strong password
+      PIHOLE_DNS_: "8.8.8.8;8.8.4.4"  # Upstream DNS
+      DNSMASQ_LISTENING: "all"
+    volumes:
+      - pihole_etc:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN     # Required for DHCP (optional feature)
+
+volumes:
+  pihole_etc:
+  pihole_dnsmasq:

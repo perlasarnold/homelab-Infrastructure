@@ -1,0 +1,58 @@
+# ─── Wiki.js — Self-hosted documentation wiki ────────────────────────────────
+# Beautiful, markdown-native wiki with built-in Git sync.
+# Access: http://<VM-IP>:3005
+#
+# Git Sync Setup (auto-pulls docs from GitHub on push):
+#   Admin → Storage → Git → enable, point to your repo's docs/ folder
+#   Set sync direction: Pull, branch: main, path: docs/
+#   Webhook URL to paste in GitHub: http://<VM-IP>:3005/api/git/hook
+#
+# r/homelab favourite for self-hosted internal documentation.
+
+name: wikijs
+
+services:
+  wikijs:
+    image: ghcr.io/requarks/wiki:2
+    container_name: wikijs
+    restart: unless-stopped
+    depends_on:
+      - wikijs-db
+    ports:
+      - "3005:3000"
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: wikijs-db
+      DB_PORT: 5432
+      DB_USER: wikijs
+      DB_PASS: "${WIKIJS_DB_PASSWORD}"   # from .env (SOPS-encrypted)
+      DB_NAME: wikijs
+    volumes:
+      - wikijs_data:/wiki/data/content   # page content
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: "0.5"
+
+  wikijs-db:
+    image: postgres:16-alpine   # alpine = smaller footprint
+    container_name: wikijs-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wikijs
+      POSTGRES_USER: wikijs
+      POSTGRES_PASSWORD: "${WIKIJS_DB_PASSWORD}"
+      # Prevent SQL injection at the connection layer with prepared statements (default in libpq)
+      # Wiki.js uses parameterized queries via knex — injection-safe by design
+    volumes:
+      - wikijs_pg:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+volumes:
+  wikijs_data:
+  wikijs_pg:

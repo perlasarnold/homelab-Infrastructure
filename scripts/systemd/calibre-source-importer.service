@@ -1,0 +1,21 @@
+[Unit]
+Description=Import stable new ebook files into the Calibre library
+After=network-online.target calibre-web.service
+Wants=network-online.target
+ConditionPathIsMountPoint=/books
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/calibre-source-importer
+User=root
+Group=root
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+Environment=CALIBRE_CONFIG_DIRECTORY=/var/lib/calibre-source-importer/calibre-config
+StateDirectory=calibre-source-importer
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/books/Calibre /run

@@ -1,0 +1,78 @@
+site_name: "Homelab Docs"
+site_description: "Hyper-V + Proxmox + Terraform + GitHub Actions homelab guide"
+site_url: "https://YOUR_USER.github.io/hyperv-debian-terraform"
+repo_url: "https://github.com/YOUR_USER/hyperv-debian-terraform"
+repo_name: "hyperv-debian-terraform"
+edit_uri: "edit/main/docs/docs/"
+
+theme:
+  name: material
+  palette:
+    - scheme: slate           # dark mode default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+    - scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - minify:           # reduces HTML/CSS/JS size
+      minify_html: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Infrastructure:
+    - Hyper-V Setup: hyperv.md
+    - Proxmox Setup: proxmox.md
+    - Terraform: terraform.md
+  - Configuration:
+    - Ansible: ansible.md
+    - Security (SOPS + SSH): security.md
+  - Services:
+    - Docker Services: docker-services.md
+    - Remote Access (Guacamole): remote-access.md
+    - Wiki (Wiki.js): wiki.md
+  - Automation:
+    - GitHub Actions: github-actions.md
+    - Auto-Remediation: remediation.md
+    - Maintenance & Cron: maintenance.md
+  - Troubleshooting: troubleshooting.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/YOUR_USER/hyperv-debian-terraform

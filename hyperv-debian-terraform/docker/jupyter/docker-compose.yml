@@ -1,0 +1,41 @@
+# ─── Jupyter Lab (on-demand only — stop when not in use to save RAM) ──────────
+# Lightweight server analysis and remediation notebook environment.
+# Access: http://<VM-IP>:8888?token=<TOKEN>
+#
+# Usage philosophy:
+#   - Start via GitHub Actions (docker-deploy workflow → service=jupyter)
+#   - Run analysis/remediation notebooks
+#   - Stop via: docker compose down  (or GitHub Actions stop workflow)
+#
+# Notebooks are stored in /opt/homelab/notebooks (git-tracked).
+# Python packages are pinned in requirements.txt for reproducibility.
+# Running as non-root (jovyan uid 1000).
+#
+# Resource limits: 512 MB RAM, 1 CPU — enough for analysis, not background waste.
+
+name: jupyter
+
+services:
+  jupyter:
+    image: jupyter/scipy-notebook:latest   # includes pandas, matplotlib, requests, paramiko
+    container_name: jupyter
+    restart: "no"          # never auto-restart — start only when needed
+    user: "1000:1000"      # non-root (jovyan)
+    ports:
+      - "127.0.0.1:8888:8888"   # loopback only — tunnel via SSH, don't expose externally
+    volumes:
+      - /opt/homelab/notebooks:/home/jovyan/work   # notebooks persist in git-tracked dir
+      - /opt/homelab/stacks:/home/jovyan/stacks:ro  # read-only view of compose stacks
+      - /var/run/docker.sock:/var/run/docker.sock:ro # allow Docker API calls from notebook
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+      JUPYTER_TOKEN: ""                 # set via .env file (SOPS-encrypted)
+      GRANT_SUDO: "no"
+      RESTARTABLE: "yes"
+      NB_UID: 1000
+      NB_GID: 1000
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"

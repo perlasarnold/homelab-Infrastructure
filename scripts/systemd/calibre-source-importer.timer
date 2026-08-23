@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll for new ebook source files every 15 minutes
+
+[Timer]
+OnCalendar=*:0/15
+RandomizedDelaySec=60
+Persistent=true
+Unit=calibre-source-importer.service
+
+[Install]
+WantedBy=timers.target
+

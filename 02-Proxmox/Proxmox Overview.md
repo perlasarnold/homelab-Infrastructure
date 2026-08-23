@@ -8,22 +8,20 @@
 - **CPU**: Host | **RAM**: 32GB+
 - **PVE**: 9.2.5 | **Kernel**: 7.0.14-6-pve
 - **Storage**: 
-    - `Bulakan-ZFS` (2TB) — **86% FULL** (1.65 TiB of 1.91 TiB)
-    - `PNAS` (23TB SMB/CIFS) — Shared Synology NAS
+    - `Bulakan-ZFS` (2TB) — Primary Local ZFS Pool (NVMe/SSD)
+    - `PNAS` (23TB SMB/CIFS) — Shared Synology NAS Storage
 - **Role**: Primary Node / Replication Source
 
 ### Cebu (192.168.1.26)
 - **PVE**: 9.2.5 | **Kernel**: 7.0.14-6-pve
-- **Update status**: Updated successfully on 2026-07-23; protected pre-update guest backups and a verified host-configuration archive are stored on PNAS
+- **Update status**: Managed via automated Ansible maintenance cycles with pre-update snapshot validation
 - **Storage**: 
-    - `cebu-zfs` (1.6TB) — Local ZFS Pool
-    - `DAS4-Backups` (5.3TB Free) — Shared Backup Target
+    - `cebu-zfs` (2TB SSD) — Local ZFS Pool
 - **Network**:
     - `vmbr0` → `nic0` (192.168.1.26) — **Active Bridge**
     - `eth0` (192.168.1.41) — Auxiliary Interface
     - `vnet1` — SDN Isolated VXLAN Bridge
-    - `cebu-zfs` (2TB SSD) — **13% used** (250 GiB of 1.91 TiB)
-    - `PNAS` (23TB SMB/CIFS) — Shared Synology NAS
+    - `PNAS` (23TB SMB/CIFS) — Shared Synology NAS Storage
     - `PNAS-Seagate` (7.3TB SMB/CIFS) — Mounted at `/mnt/pve/PNAS-Seagate`
     - DAS JBOD (3x18TB + 6TB) — **Offline/powered down 2026-07-22**; Proxmox storage entries `DAS1`-`DAS4` and `DAS4-Backups` disabled
     - Known warning: stale systemd import units for the four retired DAS pools fail at boot; active `cebu-zfs` remains healthy

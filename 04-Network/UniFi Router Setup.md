@@ -12,10 +12,8 @@
 | Property | Value |
 |----------|-------|
 | **Model** | UniFi Cloud Gateway Max (UCG Max) |
-| **UniFi OS Version** | `5.0.16` |
-| **Network Version** | `10.3.58` |
-| **Uptime** | 5 days, 13 hours (Active) |
-| **Monthly Data Usage** | ~711 GB |
+| **UniFi OS** | UniFi OS 5.x |
+| **Network Application** | Network 10.x |
 
 ---
 
@@ -23,10 +21,10 @@
 
 | Property | Value |
 |----------|-------|
-| **ISP** | Spectrum (WAN1) |
+| **ISP Interface** | Primary (WAN1) |
 | **Connection Type** | DHCP (IPv4) |
-| **WAN IP** | `203.0.113.10` |
-| **Status** | Active (100% Uptime, ~14ms Latency) |
+| **WAN IP Allocation** | Dynamic ISP / DHCP |
+| **Routing Mode** | Gateway / NAT Routing |
 
 ---
 

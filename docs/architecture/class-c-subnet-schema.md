@@ -13,12 +13,12 @@ Aligning the third octet of each Class C subnet with its corresponding **VLAN ID
 
 | VLAN ID | Name | Subnet Range | Gateway | Target Workloads & Purpose |
 |:---:|:---|:---|:---|:---|
-| **10** | **MGMT** | `192.168.10.0/24` | `192.168.10.1` | Hypervisor hosts (Proxmox VE), UniFi gateway, switches, APs, Synology DSM & TrueNAS management interfaces |
-| **20** | **TRUSTED** | `192.168.20.0/24` | `192.168.20.1` | Primary admin workstations, daily laptops, mobile devices, admin desktop (`Perlas-W10`) |
-| **30** | **IOT** | `192.168.30.0/24` | `192.168.30.1` | Home Assistant OS (`haos-17.3`), smart TVs, IoT sensors, smart plugs, cameras |
-| **40** | **STORAGE** *(Optional)* | `192.168.40.0/24` | `192.168.40.1` | High-speed dedicated storage traffic (NFS / SMB / iSCSI inter-node replication) |
-| **110** | **SERVICES** | `192.168.110.0/24` *(or `192.168.42.0/24`)* | `192.168.110.1` | Internal applications (Plex, Jellyfin, Arr stack, Immich, Fileservers, Authentik) |
-| **120** | **DMZ / EXTERNAL** | `192.168.120.0/24` | `192.168.120.1` | Public ingress controllers (Cloudflared tunnels, Nginx Proxy Manager) |
+| **10** | **MGMT** | `VLAN 10 (SecOps)/24` | `VLAN 10 (SecOps)` | Hypervisor hosts (Proxmox VE), UniFi gateway, switches, APs, Synology DSM & TrueNAS management interfaces |
+| **20** | **TRUSTED** | `VLAN 20 (Trusted)/24` | `VLAN 20 (Trusted)` | Primary admin workstations, daily laptops, mobile devices, admin desktop (`Perlas-W10`) |
+| **30** | **IOT** | `VLAN 30 (IoT)/24` | `VLAN 30 [Gateway]` | Home Assistant OS (`haos-17.3`), smart TVs, IoT sensors, smart plugs, cameras |
+| **40** | **STORAGE** *(Optional)* | `192.168.40.0/24` | `VLAN 40 [Gateway]` | High-speed dedicated storage traffic (NFS / SMB / iSCSI inter-node replication) |
+| **110** | **SERVICES** | `VLAN 110 (Services)/24` *(or `VLAN 110 (Services)/24`)* | `VLAN 110 (Services)` | Internal applications (Plex, Jellyfin, Arr stack, Immich, Fileservers, Authentik) |
+| **120** | **DMZ / EXTERNAL** | `VLAN 120 (DMZ)/24` | `VLAN 120 (DMZ)` | Public ingress controllers (Cloudflared tunnels, Nginx Proxy Manager) |
 
 ---
 
@@ -42,66 +42,66 @@ Enforce a standardized host octet convention across all subnets for easy trouble
 
 ## 📋 Detailed Subnet Breakdown & Host Assignments
 
-### 1. VLAN 10 — Management (`192.168.10.0/24`)
+### 1. VLAN 10 — Management (`VLAN 10 (SecOps)/24`)
 *Dedicated exclusively to hypervisor hosts, switches, and core storage web interfaces.*
 
 | IP Address | Hostname / Device | Hardware / Platform | Notes |
 |:---|:---|:---|:---|
-| `192.168.10.1` | `Perlas-UnifiGW` | UniFi Cloud Gateway Max | Subnet Default Gateway |
-| `192.168.10.12` | `PNAS` | Synology NAS | Storage Web DSM Interface |
-| `192.168.10.13` | `PNAS2` | Synology NAS 2 | Storage Web DSM Interface |
-| `192.168.10.15` | `TrueNAS-SCALE` | TrueNAS SCALE (Cebu VM 120) | Storage Web Interface |
-| `192.168.10.25` | `Bulakan` | Proxmox VE Node 1 | Primary Node Host Management (PVE GUI / SSH) |
-| `192.168.10.26` | `Cebu` | Proxmox VE Node 2 | Node Host Management (PVE GUI / SSH) |
-| `192.168.10.27` | `Dapitan` | Proxmox VE Node 3 | Node Host Management (PVE GUI / SSH) |
-| `192.168.10.141` | `USW-Pro-Max-16` | UniFi 16-Port Switch | Switch Management IP |
-| `192.168.10.124` | `U7-Pro-AP` | UniFi WiFi 7 AP | Access Point Management IP |
-| `192.168.10.200-249` | *DHCP Pool* | DHCP Range | Admin temporary maintenance leases |
+| `VLAN 10 (SecOps)` | `Perlas-UnifiGW` | UniFi Cloud Gateway Max | Subnet Default Gateway |
+| `VLAN 10 (SecOps)` | `PNAS` | Synology NAS | Storage Web DSM Interface |
+| `VLAN 10 (SecOps)` | `PNAS2` | Synology NAS 2 | Storage Web DSM Interface |
+| `VLAN 10 (SecOps)` | `TrueNAS-SCALE` | TrueNAS SCALE (Cebu VM 120) | Storage Web Interface |
+| `VLAN 10 (SecOps)` | `Bulakan` | Proxmox VE Node 1 | Primary Node Host Management (PVE GUI / SSH) |
+| `VLAN 10 (SecOps)` | `Cebu` | Proxmox VE Node 2 | Node Host Management (PVE GUI / SSH) |
+| `VLAN 10 (SecOps)` | `Dapitan` | Proxmox VE Node 3 | Node Host Management (PVE GUI / SSH) |
+| `VLAN 10 (SecOps)` | `USW-Pro-Max-16` | UniFi 16-Port Switch | Switch Management IP |
+| `VLAN 10 (SecOps)` | `U7-Pro-AP` | UniFi WiFi 7 AP | Access Point Management IP |
+| `VLAN 10 (SecOps)-249` | *DHCP Pool* | DHCP Range | Admin temporary maintenance leases |
 
 ---
 
-### 2. VLAN 110 — Internal Homelab Services (`192.168.110.0/24` or `192.168.42.0/24`)
+### 2. VLAN 110 — Internal Homelab Services (`VLAN 110 (Services)/24` or `VLAN 110 (Services)/24`)
 *Internal application servers, media platforms, indexers, and DNS resolvers.*
 
 | IP Address | Service / Hostname | Node / Location | Purpose |
 |:---|:---|:---|:---|
-| `192.168.110.1` | Gateway | UniFi UCG Max | Subnet Gateway |
-| `192.168.110.5` | `pihole-primary` | Bulakan (CT 301) | Primary DNS Sinkhole |
-| `192.168.110.6` | `pihole-secondary` | Cebu (CT 401) | Secondary DNS Sinkhole |
-| `192.168.110.41` | `jellyfin-cebu` | Cebu (CT 416) | Media Server |
-| `192.168.110.42` | `arr-stack-cebu` | Cebu (CT 417) | Sonarr/Radarr/Prowlarr/Bazarr |
-| `192.168.110.43` | `jellyfin-dapitan` | Dapitan (CT 510) | Media Server (Dapitan) |
-| `192.168.110.44` | `plex-dapitan` | Dapitan (CT 509) | Media Server (Dapitan) |
-| `192.168.110.54` | `plex-bulakan` | Bulakan (CT 104) | Media Server (Bulakan) |
-| `192.168.110.71` | `torrent-box-dapitan` | Dapitan (CT 501) | Ubuntu GUI Torrent Box |
-| `192.168.110.147` | `immich` | Dapitan (CT 504) | Photo Management Server |
-| `192.168.110.48` | `photoview-dapitan` | Dapitan (CT 511) | Photoview Photo Gallery |
-| `192.168.110.214` | `fileserver` | Cebu (CT 402/214) | Local Data Sharing LXC |
-| `192.168.110.215` | `plex-cebu` | Cebu (CT 405) | Media Server (Cebu) |
-| `192.168.110.225` | `authentik` | Cebu (CT 103) | Identity Provider & SSO |
+| `VLAN 110 (Services)` | Gateway | UniFi UCG Max | Subnet Gateway |
+| `VLAN 110 (Services)` | `pihole-primary` | Bulakan (CT 301) | Primary DNS Sinkhole |
+| `VLAN 110 (Services)` | `pihole-secondary` | Cebu (CT 401) | Secondary DNS Sinkhole |
+| `VLAN 110 (Services)` | `jellyfin-cebu` | Cebu (CT 416) | Media Server |
+| `VLAN 110 (Services)` | `arr-stack-cebu` | Cebu (CT 417) | Sonarr/Radarr/Prowlarr/Bazarr |
+| `VLAN 110 (Services)` | `jellyfin-dapitan` | Dapitan (CT 510) | Media Server (Dapitan) |
+| `VLAN 110 (Services)` | `plex-dapitan` | Dapitan (CT 509) | Media Server (Dapitan) |
+| `VLAN 110 (Services)` | `plex-bulakan` | Bulakan (CT 104) | Media Server (Bulakan) |
+| `VLAN 110 (Services)` | `torrent-box-dapitan` | Dapitan (CT 501) | Ubuntu GUI Torrent Box |
+| `VLAN 110 (Services)` | `immich` | Dapitan (CT 504) | Photo Management Server |
+| `VLAN 110 (Services)` | `photoview-dapitan` | Dapitan (CT 511) | Photoview Photo Gallery |
+| `VLAN 110 (Services)` | `fileserver` | Cebu (CT 402/214) | Local Data Sharing LXC |
+| `VLAN 110 (Services)` | `plex-cebu` | Cebu (CT 405) | Media Server (Cebu) |
+| `VLAN 110 (Services)` | `authentik` | Cebu (CT 103) | Identity Provider & SSO |
 
 ---
 
-### 3. VLAN 120 — Public DMZ / External (`192.168.120.0/24`)
+### 3. VLAN 120 — Public DMZ / External (`VLAN 120 (DMZ)/24`)
 *Publicly exposed proxy services and secure ingress tunnels.*
 
 | IP Address | Service / Hostname | Location | Purpose |
 |:---|:---|:---|:---|
-| `192.168.120.1` | Gateway | UniFi UCG Max | Subnet Gateway |
-| `192.168.120.6` | `cloudflared-bulakan` | Bulakan (CT 304) | Primary Cloudflare Tunnel |
-| `192.168.120.7` | `cloudflared-cebu` | Cebu (CT 404) | Secondary Cloudflare Tunnel (ACTIVE) |
-| `192.168.120.211` | `npm-proxy` | Cebu (CT 105) | Nginx Proxy Manager SSL Proxy (Active) |
+| `VLAN 120 (DMZ)` | Gateway | UniFi UCG Max | Subnet Gateway |
+| `VLAN 120 (DMZ)` | `cloudflared-bulakan` | Bulakan (CT 304) | Primary Cloudflare Tunnel |
+| `VLAN 120 (DMZ)` | `cloudflared-cebu` | Cebu (CT 404) | Secondary Cloudflare Tunnel (ACTIVE) |
+| `VLAN 120 (DMZ)` | `npm-proxy` | Cebu (CT 105) | Nginx Proxy Manager SSL Proxy (Active) |
 
 ---
 
-### 4. VLAN 30 — Smart Home & IoT (`192.168.30.0/24`)
+### 4. VLAN 30 — Smart Home & IoT (`VLAN 30 (IoT)/24`)
 *Smart home hub, IoT sensors, cameras, and smart TVs.*
 
 | IP Address | Service / Hostname | Location | Purpose |
 |:---|:---|:---|:---|
-| `192.168.30.1` | Gateway | UniFi UCG Max | Subnet Gateway |
-| `192.168.30.11` | `haos-17.3` | Cebu (VM 111) | Home Assistant OS |
-| `192.168.30.100-249` | *DHCP Pool* | Wireless AP (`Sampaloc-IoT`) | Smart plugs, TVs, wireless sensors |
+| `VLAN 30 [Gateway]` | Gateway | UniFi UCG Max | Subnet Gateway |
+| `haos.homelab.internal (VLAN 30)` | `haos-17.3` | Cebu (VM 111) | Home Assistant OS |
+| `VLAN 30 [DHCP Pool]` | *DHCP Pool* | Wireless AP (`Sampaloc-IoT`) | Smart plugs, TVs, wireless sensors |
 
 ---
 
@@ -114,7 +114,7 @@ To enforce isolation between these Class C subnets, configure **UniFi Network �
    - *Rationale:* Ensures response traffic can return across subnet boundaries.
 
 2. **Allow Inter-VLAN DNS (Port 53):**
-   - *Action:* Accept | *Source:* Any | *Destination:* Pi-hole IPs (`192.168.110.5`, `192.168.110.6`) | *Port:* `53` (UDP/TCP)
+   - *Action:* Accept | *Source:* Any | *Destination:* Pi-hole IPs (`VLAN 110 (Services)`, `VLAN 110 (Services)`) | *Port:* `53` (UDP/TCP)
    - *Rationale:* Permits all isolated subnets (Services, DMZ, IoT) to resolve DNS via Pi-hole.
 
 3. **Allow Trusted Admin to Management:**
@@ -122,7 +122,7 @@ To enforce isolation between these Class C subnets, configure **UniFi Network �
    - *Rationale:* Allows admin devices to access Proxmox PVE GUIs, switch consoles, and NAS administration.
 
 4. **Allow Media Services to Storage (SMB / NFS):**
-   - *Action:* Accept | *Source:* VLAN 110 (Services) | *Destination:* Storage IPs (`192.168.10.12`, `192.168.10.15`) | *Ports:* `445` (SMB), `2049` (NFS)
+   - *Action:* Accept | *Source:* VLAN 110 (Services) | *Destination:* Storage IPs (`VLAN 10 (SecOps)`, `VLAN 10 (SecOps)`) | *Ports:* `445` (SMB), `2049` (NFS)
    - *Rationale:* Connects media apps (Plex, Jellyfin, Arr stack) to ZFS/CIFS pools without granting full storage admin access.
 
 5. **Block DMZ Access to Internal Network:**

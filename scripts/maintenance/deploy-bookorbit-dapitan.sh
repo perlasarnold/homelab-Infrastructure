@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # 📚 Dapitan BookOrbit Server Deployment Script
-# Node: Dapitan (192.168.1.27) | Host Storage Mount: /mnt/bindmounts/ebooks
-# Network: SERVICES VLAN 110 (192.168.110.50/24) | Reverse Proxy: bookorbit.homelab-admin.me
+# Node: Dapitan (VLAN 1 [Management]) | Host Storage Mount: /mnt/bindmounts/ebooks
+# Network: SERVICES VLAN 110 (VLAN 110 (Services)/24) | Reverse Proxy: bookorbit.homelab-admin.me
 # Default Admin Credentials: user: homelab-admin | pass: Jiggu1ot!@#
 # ==============================================================================
 
@@ -16,10 +16,10 @@ DISK_SIZE_GB="${DISK_SIZE_GB:-16}"
 STORAGE_POOL="${STORAGE_POOL:-vm-fast}"
 BRIDGE="${BRIDGE:-vmbr0}"
 VLAN_TAG="${VLAN_TAG:-110}"
-IP_ADDR="${IP_ADDR:-192.168.110.50/24}"
-GATEWAY="${GATEWAY:-192.168.110.1}"
-DNS_SERVER="${DNS_SERVER:-1.1.1.1 192.168.1.5}"
-SYNOLOGY_SHARE="${SYNOLOGY_SHARE:-//192.168.1.12/Media/Ebooks}"
+IP_ADDR="${IP_ADDR:-VLAN 110 (Services)/24}"
+GATEWAY="${GATEWAY:-VLAN 110 (Services)}"
+DNS_SERVER="${DNS_SERVER:-1.1.1.1 VLAN 1 [Secondary DNS]}"
+SYNOLOGY_SHARE="${SYNOLOGY_SHARE:-//VLAN 1 [Management]/Media/Ebooks}"
 HOST_MOUNT_POINT="${HOST_MOUNT_POINT:-/mnt/bindmounts/ebooks}"
 CONTAINER_EBOOKS_PATH="${CONTAINER_EBOOKS_PATH:-/mnt/ebooks}"
 APP_DIR="${APP_DIR:-/opt/bookorbit}"
@@ -29,7 +29,7 @@ RAW_IP=$(echo "$IP_ADDR" | cut -d'/' -f1)
 echo "======================================================================"
 echo "📚 Dapitan BookOrbit Deployment & Provisioning Setup"
 echo "======================================================================"
-echo "Node:                Dapitan (192.168.1.27)"
+echo "Node:                Dapitan (VLAN 1 [Management])"
 echo "Container ID:        $CT_ID ($CT_NAME)"
 echo "Resources:           $CORES Cores | $MEMORY_MB MB RAM | $DISK_SIZE_GB GB ($STORAGE_POOL)"
 echo "Network Config:      $IP_ADDR (GW: $GATEWAY, VLAN: $VLAN_TAG, Bridge: $BRIDGE)"

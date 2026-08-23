@@ -2,9 +2,9 @@
 
 > **Date:** 2026-08-14  
 > **Objective:** Setup & operational documentation for `jellyfindp.homelab-admin.me` (Dapitan Jellyfin CT 510).  
-> **Target Service:** Dapitan Jellyfin CT 510 (`192.168.110.43:8096` — **SERVICES VLAN 110**)  
-> **Reverse Proxy:** Nginx Proxy Manager (`192.168.120.211` — **DMZ VLAN 120**)  
-> **Local DNS:** Pi-hole (`192.168.1.4`)  
+> **Target Service:** Dapitan Jellyfin CT 510 (`VLAN 110 (Services):8096` — **SERVICES VLAN 110**)  
+> **Reverse Proxy:** Nginx Proxy Manager (`VLAN 120 (DMZ)` — **DMZ VLAN 120**)  
+> **Local DNS:** Pi-hole (`VLAN 1 [Primary DNS]`)  
 > **Status:** 🟢 Active (LAN-Only Reverse Proxy with Let's Encrypt Wildcard SSL)  
 
 ---
@@ -38,7 +38,7 @@ To route traffic directly to your UniFi router instead of Cloudflare's proxy edg
 
 ## 3. Step 2: UniFi Gateway Port Forwarding Rules
 
-Configure your UniFi Router (`192.168.1.1` / UniFi Network Application) to forward incoming WAN traffic on ports 80/443 directly to your Nginx Proxy Manager LXC (`192.168.1.210`).
+Configure your UniFi Router (`VLAN 1 [Gateway]` / UniFi Network Application) to forward incoming WAN traffic on ports 80/443 directly to your Nginx Proxy Manager LXC (`VLAN 1 [Management]`).
 
 1. Open **UniFi Network** $\rightarrow$ **Settings** $\rightarrow$ **Security** $\rightarrow$ **Port Forwarding**.
 2. Click **Create New Rule**:
@@ -49,7 +49,7 @@ Configure your UniFi Router (`192.168.1.1` / UniFi Network Application) to forwa
 - **Interface**: `WAN`
 - **From**: `Any`
 - **Port**: `443`
-- **Forward IP**: `192.168.1.210` (Nginx Proxy Manager LXC)
+- **Forward IP**: `VLAN 1 [Management]` (Nginx Proxy Manager LXC)
 - **Forward Port**: `443`
 - **Protocol**: `TCP`
 
@@ -59,7 +59,7 @@ Configure your UniFi Router (`192.168.1.1` / UniFi Network Application) to forwa
 - **Interface**: `WAN`
 - **From**: `Any`
 - **Port**: `80`
-- **Forward IP**: `192.168.1.210`
+- **Forward IP**: `VLAN 1 [Management]`
 - **Forward Port**: `80`
 - **Protocol**: `TCP`
 
@@ -69,14 +69,14 @@ Configure your UniFi Router (`192.168.1.1` / UniFi Network Application) to forwa
 
 ## 4. Step 3: Configure Proxy Host in Nginx Proxy Manager
 
-Now, configure NPM (`http://192.168.120.211:81`) to proxy `jellyfindp.homelab-admin.me` directly to Dapitan Jellyfin CT 510 (`192.168.110.43:8096`).
+Now, configure NPM (`http://VLAN 120 (DMZ):81`) to proxy `jellyfindp.homelab-admin.me` directly to Dapitan Jellyfin CT 510 (`VLAN 110 (Services):8096`).
 
-1. Log into NPM (`http://192.168.120.211:81`).
+1. Log into NPM (`http://VLAN 120 (DMZ):81`).
 2. Go to **Hosts** $\rightarrow$ **Proxy Hosts** $\rightarrow$ Click **Add Proxy Host**.
 3. **Details Tab**:
    - **Domain Names**: `jellyfindp.homelab-admin.me`
    - **Scheme**: `http`
-   - **Forward Hostname / IP**: `192.168.110.43` (Dapitan Jellyfin CT 510 — **SERVICES VLAN 110**)
+   - **Forward Hostname / IP**: `VLAN 110 (Services)` (Dapitan Jellyfin CT 510 — **SERVICES VLAN 110**)
    - **Forward Port**: `8096`
    - **Websockets Support**: **Toggle ON** (Required for Jellyfin client state & SyncPlay)
 4. **SSL Tab**:

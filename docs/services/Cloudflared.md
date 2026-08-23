@@ -11,7 +11,7 @@ The homelab uses a redundant dual-node setup to ensure service availability if o
 | Node | Container ID | Hostname | IP Address | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **Bulakan** | 304 | `cloudflared` | DHCP | **Primary** |
-| **Cebu** | 404 | `cloudflared-cebu` | `192.168.1.7` | **Secondary** |
+| **Cebu** | 404 | `cloudflared-cebu` | `VLAN 1 (Management)` | **Secondary** |
 
 ### Configuration Details
 - **Tunnel Name:** `Bulakan-CF1`

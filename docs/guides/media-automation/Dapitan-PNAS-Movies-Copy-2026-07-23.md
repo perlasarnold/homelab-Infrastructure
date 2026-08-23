@@ -24,7 +24,7 @@ The transfer is one-way and does not delete destination files.
 
 ### 1. Selected safe source and destination handling
 
-- The script mounts `//192.168.1.12/Seagate` temporarily and read-only.
+- The script mounts `//VLAN 1 [Management]/Seagate` temporarily and read-only.
 - Cebu's existing Seagate-share credential is reused without printing it.
 - Dapitan stores it in the dedicated root-owned, mode `0600` file
   `/etc/dapitan-copy/pnas-seagate.credentials`.
@@ -77,7 +77,7 @@ Quick mount and path check:
 
 Validation completed successfully on 2026-07-23. It confirmed:
 
-- `//192.168.1.12/Seagate/Share/Movies` is accessible.
+- `//VLAN 1 [Management]/Seagate/Share/Movies` is accessible.
 - The SMB source is mounted read-only during the check.
 - `/mnt/bindmounts/media-data/library/movies` is on
   `bulk18/media-data`.

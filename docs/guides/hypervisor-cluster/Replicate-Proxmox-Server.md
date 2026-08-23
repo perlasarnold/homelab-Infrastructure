@@ -48,9 +48,9 @@ The process involves:
 Compare with original network setup from `02-Proxmox/Proxmox Overview.md`:
 
 **Original Configuration:**
-- Host IP: `192.168.1.25`
+- Host IP: `VLAN 1 [Management]`
 - Node Name: `Bulakan`
-- vmbr0: Linux Bridge `192.168.1.25/24`
+- vmbr0: Linux Bridge `VLAN 1 [Management]/24`
 - bond0: Active-Backup Bond (enp1s0 + enx000000000000)
 
 **On new hardware:**

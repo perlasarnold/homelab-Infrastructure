@@ -1,6 +1,6 @@
 # Implementation Guide: Automated SMB Sync
 
-Follow these steps to set up the 15-minute sync from `192.168.1.12` to your TrueNAS server.
+Follow these steps to set up the 15-minute sync from `VLAN 1 [Management]` to your TrueNAS server.
 
 ## Step 1: Configure Rclone Remote
 Open the TrueNAS Shell (Web UI or SSH) and run:
@@ -11,7 +11,7 @@ Follow the interactive prompts:
 1.  **n)** New remote
 2.  **name**: `seagate-source`
 3.  **Storage**: `smb` (Find the number for SMB in the list)
-4.  **host**: `192.168.1.12`
+4.  **host**: `VLAN 1 [Management]`
 5.  **user**: (Your SMB Username)
 6.  **pass**: (Your SMB Password - select `y` to enter your own password)
 7.  **domain/port/etc**: Leave as default unless specifically required.

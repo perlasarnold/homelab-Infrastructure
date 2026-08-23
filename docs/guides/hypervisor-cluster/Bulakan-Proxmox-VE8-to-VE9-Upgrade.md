@@ -1,7 +1,7 @@
 # Bulakan — Proxmox VE 8 → VE 9 Upgrade Guide
 
 > **Date:** Prepared 2026-07-17; executed 2026-07-23  
-> **Node:** Bulakan (`192.168.1.25`) — Homelab-Net Cluster  
+> **Node:** Bulakan (`VLAN 1 [Management]`) — Homelab-Net Cluster  
 > **Objective:** In-place major version upgrade from Proxmox VE 8.4 to Proxmox VE 9 (Debian 13 "Trixie")  
 > **Maintainer:** Perlas  
 
@@ -106,7 +106,7 @@ Confirm no jobs are stuck or failed. Let any in-progress replication finish befo
 
 ### Option A: Backup via Proxmox Web UI
 
-1. Navigate to `https://192.168.1.25:8006`
+1. Navigate to `https://VLAN 1 [Management]:8006`
 2. Go to **Datacenter → Backup**
 3. Create a backup job targeting all VMs/containers on Bulakan
 4. Set storage to **PNAS** (or **DAS4-Backups** via Cebu)
@@ -360,11 +360,11 @@ qm start 204    # Immich-UbuntuLTS
 
 | Service | URL |
 |---------|-----|
-| Proxmox UI | https://192.168.1.25:8006 |
-| Pi-Hole | http://192.168.1.4/admin |
-| Plex | http://192.168.1.54:32400 |
-| Jellyfin | http://192.168.1.126:8096 |
-| Audiobookshelf | http://192.168.1.59 |
+| Proxmox UI | https://VLAN 1 [Management]:8006 |
+| Pi-Hole | http://VLAN 1 [Primary DNS]/admin |
+| Plex | http://VLAN 1 [Management]:32400 |
+| Jellyfin | http://VLAN 1 [Management]:8096 |
+| Audiobookshelf | http://VLAN 1 [Management] |
 
 > [!TIP]
 > Clear your browser cache before loading the Proxmox Web UI. The new interface may not render correctly with a cached version.

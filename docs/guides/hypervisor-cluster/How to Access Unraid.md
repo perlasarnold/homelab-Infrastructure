@@ -20,7 +20,7 @@
 Open your browser and go to:
 
 ```
-https://192.168.1.24
+https://VLAN 1 (Management)
 ```
 
 > ⚠️ **Certificate Warning**: You may see a certificate warning. Click **Advanced → Accept the Risk and Continue** (Firefox) or **Advanced → Proceed** (Chrome) to bypass it.

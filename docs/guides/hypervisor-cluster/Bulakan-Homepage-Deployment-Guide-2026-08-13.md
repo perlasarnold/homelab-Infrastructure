@@ -1,7 +1,7 @@
 # 🌐 Bulakan Proxmox Homepage Deployment Guide
 
 - **Date:** August 13, 2026
-- **Objective:** Provision a dedicated Homepage (`gethomepage.dev`) dashboard running in a Debian 12 LXC container (**CT 116**) on the Bulakan Proxmox VE node (`192.168.10.25`), accessible externally via Cloudflare Tunnel at `https://home.homelab-admin.me`.
+- **Objective:** Provision a dedicated Homepage (`gethomepage.dev`) dashboard running in a Debian 12 LXC container (**CT 116**) on the Bulakan Proxmox VE node (`VLAN 10 (SecOps)`), accessible externally via Cloudflare Tunnel at `https://home.homelab-admin.me`.
 - **Maintainer:** Perlas
 
 ---
@@ -19,20 +19,20 @@ Homepage is deployed on the primary Proxmox hypervisor node (`Bulakan`) inside `
 
 | Parameter | Specification | Rationale |
 | :--- | :--- | :--- |
-| **Host Node** | `Bulakan` (`192.168.10.25`) | Primary hypervisor node in the cluster. |
+| **Host Node** | `Bulakan` (`VLAN 10 (SecOps)`) | Primary hypervisor node in the cluster. |
 | **Container ID** | **CT 116** | Designated VMID allocation on Bulakan. |
 | **Instance Type** | Unprivileged LXC + Nesting | Lightweight resource footprint (~256 MB RAM) with Docker Compose support. |
 | **Operating System** | Debian 12 (Bookworm) | Stable base for Docker workloads. |
 | **Public FQDN** | `https://home.homelab-admin.me` | Publicly resolvable HTTPS endpoint via Cloudflare Tunnel. |
-| **Ingress Router** | Cloudflare Tunnel (`cloudflared-bulakan` CT 304 / `192.168.120.6`) | Zero open inbound ports required on edge firewall. |
-| **Network IP** | `192.168.110.50` (VLAN 110 Services) | Static IP allocation on the Services subnet. |
+| **Ingress Router** | Cloudflare Tunnel (`cloudflared-bulakan` CT 304 / `VLAN 120 (DMZ)`) | Zero open inbound ports required on edge firewall. |
+| **Network IP** | `VLAN 110 (Services)` (VLAN 110 Services) | Static IP allocation on the Services subnet. |
 | **Port** | `3000` | Homepage HTTP web port. |
 
 ---
 
 ## 🛠️ Step 1: Proxmox LXC Container Provisioning (CT 116)
 
-Execute on **Bulakan PVE** (`192.168.10.25:8006`) via PVE Web Shell or SSH:
+Execute on **Bulakan PVE** (`VLAN 10 (SecOps):8006`) via PVE Web Shell or SSH:
 
 ```bash
 # Provision LXC Container ID 116 (Zero disruption to host)
@@ -42,7 +42,7 @@ pct create 116 local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst \
   --memory 1024 \
   --swap 512 \
   --features nesting=1,keyctl=1 \
-  --net0 name=eth0,bridge=vmbr0,tag=110,ip=192.168.110.50/24,gw=192.168.110.1 \
+  --net0 name=eth0,bridge=vmbr0,tag=110,ip=VLAN 110 (Services)/24,gw=VLAN 110 (Services) \
   --storage local-lld \
   --rootfs local-lld:8 \
   --unprivileged 1 \
@@ -128,7 +128,7 @@ To route external requests to Homepage and your services via Cloudflare Tunnel (
 ### 1. Primary Dashboard Endpoint
 - **Public Hostname:** `home.homelab-admin.me`
 - **Service Type:** `HTTP`
-- **Internal Target:** `192.168.110.50:3000`
+- **Internal Target:** `VLAN 110 (Services):3000`
 
 ### 2. Configured Subdomain Service Mappings
 Homepage will display and link to all subdomains configured in your Cloudflare DNS zone:
@@ -160,7 +160,7 @@ Homepage will display and link to all subdomains configured in your Cloudflare D
 
 ## 📊 Outcome & Verification
 
-- **Internal Access:** `http://192.168.110.50:3000`
+- **Internal Access:** `http://VLAN 110 (Services):3000`
 - **External Access:** `https://home.homelab-admin.me`
 - **Service Impact:** **0 host reboots, 0 container restarts, 0 service outages.**
 

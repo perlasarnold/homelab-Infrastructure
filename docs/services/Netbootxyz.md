@@ -1,7 +1,7 @@
 # 🌐 Netboot.xyz
 
 > Self-hosted PXE/iPXE boot server for network-based OS installations and recovery tools.  
-> **Container ID:** 118 | **IP:** 192.168.1.54 | **Web UI:** http://192.168.1.54:3000
+> **Container ID:** 118 | **IP:** VLAN 1 [Management] | **Web UI:** http://VLAN 1 [Management]:3000
 
 ---
 
@@ -28,8 +28,8 @@ Instead of creating USB drives or mounting ISOs, netboot.xyz downloads and boots
 | **Template** | Debian 12 (unmanaged) via tteck helper script |
 | **VM ID** | 118 |
 | **Hostname** | netbootxyz |
-| **Static IP** | 192.168.1.54/24 |
-| **Gateway** | 192.168.1.1 |
+| **Static IP** | VLAN 1 [Management]/24 |
+| **Gateway** | VLAN 1 [Gateway] |
 | **CPU/Memory** | 2 cores / 1 GiB |
 | **Disk** | 16 GiB (ZFS - Bulakan-ZFS) |
 | **Nesting** | Enabled |
@@ -90,7 +90,7 @@ docker ps
 # netbootxyz-nginx    # HTTP on :80/:8080
 ```
 
-Access the web UI: http://192.168.1.54:3000
+Access the web UI: http://VLAN 1 [Management]:3000
 
 ---
 
@@ -98,7 +98,7 @@ Access the web UI: http://192.168.1.54:3000
 
 ### Web UI Setup
 
-1. Navigate to `http://192.168.1.54:3000`
+1. Navigate to `http://VLAN 1 [Management]:3000`
 2. First login: No authentication by default (configure if desired)
 3. Review settings:
    - **Local Assets:** Enable to cache ISOs locally (saves bandwidth)
@@ -132,7 +132,7 @@ If using Pi-hole (CT 301 or Unraid) as DHCP server:
 
 | Setting | Value |
 |---------|-------|
-| **Boot Server** | `192.168.1.54` |
+| **Boot Server** | `VLAN 1 [Management]` |
 | **Boot Filename** | `netboot.xyz.kpxe` (BIOS) or `netboot.xyz.efi` (UEFI) |
 
 4. Save settings
@@ -143,9 +143,9 @@ If using Pi-hole (CT 301 or Unraid) as DHCP server:
 
 | Setting | Value |
 |---------|-------|
-| **TFTP Server** | `192.168.1.54` |
+| **TFTP Server** | `VLAN 1 [Management]` |
 | **Network Booting** → **Enable** | ✅ Checked |
-| **Next Server** | `192.168.1.54` |
+| **Next Server** | `VLAN 1 [Management]` |
 | **Default BIOS file name** | `netboot.xyz.kpxe` |
 | **UEFI 32 bit file name** | `netboot.xyz.efi` |
 | **UEFI 64 bit file name** | `netboot.xyz.efi` |
@@ -153,7 +153,7 @@ If using Pi-hole (CT 301 or Unraid) as DHCP server:
 ### Option 3: Router/Other DHCP
 
 Consult your router documentation. Look for:
-- **TFTP Server IP:** `192.168.1.54`
+- **TFTP Server IP:** `VLAN 1 [Management]`
 - **Boot Filename:** `netboot.xyz.kpxe` (BIOS) or `netboot.xyz.efi` (UEFI)
 - **DHCP Options:** 66 (TFTP server name) and 67 (bootfile name)
 
@@ -163,7 +163,7 @@ If you already have a PXE server, add a menu entry:
 
 ```bash
 # iPXE chainload netboot.xyz
-kernel http://192.168.1.54/netboot.xyz.lkrn
+kernel http://VLAN 1 [Management]/netboot.xyz.lkrn
 boot
 ```
 
@@ -306,7 +306,7 @@ terraform apply
 |-------|---------|
 | Container running? | `pct status 118` |
 | Services running? | `pct exec 118 -- docker ps` |
-| Network connectivity? | `ping 192.168.1.54` from client |
+| Network connectivity? | `ping VLAN 1 [Management]` from client |
 | DHCP options set? | Check router/Pi-hole DHCP settings |
 | Firewall blocking? | Check UFW/iptables in container |
 

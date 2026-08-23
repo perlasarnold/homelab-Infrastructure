@@ -1,10 +1,10 @@
 # 🎬 Dapitan Plex Nginx Reverse Proxy & VLAN 110 Migration Guide (`plexdp.homelab-admin.me`)
 
 > **Date:** 2026-08-15  
-> **Objective:** Migrate Dapitan Plex Media Server (CT 509) to SERVICES VLAN 110 (`192.168.110.44:32400`) and establish secure remote reverse proxy access via Nginx Proxy Manager (`plexdp.homelab-admin.me`).  
-> **Target Service:** Dapitan Plex CT 509 (`192.168.110.44:32400` — **SERVICES VLAN 110**)  
-> **Reverse Proxy:** Nginx Proxy Manager (`192.168.120.211:81` — **Cebu CT 105 / DMZ VLAN 120**)  
-> **Local DNS:** Pi-hole Primary (`192.168.1.4` CT 301) & Secondary (`192.168.1.134` CT 401)  
+> **Objective:** Migrate Dapitan Plex Media Server (CT 509) to SERVICES VLAN 110 (`VLAN 110 (Services):32400`) and establish secure remote reverse proxy access via Nginx Proxy Manager (`plexdp.homelab-admin.me`).  
+> **Target Service:** Dapitan Plex CT 509 (`VLAN 110 (Services):32400` — **SERVICES VLAN 110**)  
+> **Reverse Proxy:** Nginx Proxy Manager (`VLAN 120 (DMZ):81` — **Cebu CT 105 / DMZ VLAN 120**)  
+> **Local DNS:** Pi-hole Primary (`VLAN 1 [Primary DNS]` CT 301) & Secondary (`VLAN 1 [Management]` CT 401)  
 > **Status:** 🟢 Active (LAN-Only Reverse Proxy via Pi-hole & Let's Encrypt Wildcard SSL `*.homelab-admin.me` — Zero Open Ports)  
 
 ---
@@ -21,16 +21,16 @@
 [ UniFi UCG Max Gateway ] (WAN:443 / WAN:80 Port Forwarding)
             │
             ▼
-[ Nginx Proxy Manager (Cebu CT 105) ] (192.168.120.211:443 — DMZ VLAN 120)
+[ Nginx Proxy Manager (Cebu CT 105) ] (VLAN 120 (DMZ):443 — DMZ VLAN 120)
             │ (Wildcard SSL *.homelab-admin.me, HTTP/2, HSTS, Websockets, Streaming Directives)
             ▼
-[ Plex Media Server (Dapitan CT 509) ] (192.168.110.44:32400 — SERVICES VLAN 110)
+[ Plex Media Server (Dapitan CT 509) ] (VLAN 110 (Services):32400 — SERVICES VLAN 110)
 ```
 
 - **Cloudflare TOS Compliance:** Video streaming media is routed via **DNS-Only (Grey Cloud)** direct port forwarding, complying with Cloudflare TOS Section 2.8.
-- **Network Segmentation:** CT 509 migrated to **SERVICES VLAN 110** (`192.168.110.44/24`), aligning with the homelab Class-C subnet schema.
+- **Network Segmentation:** CT 509 migrated to **SERVICES VLAN 110** (`VLAN 110 (Services)/24`), aligning with the homelab Class-C subnet schema.
 - **SSL Protection:** NPM terminates TLS using the Let's Encrypt wildcard certificate (`*.homelab-admin.me`), enforcing HTTPS with HSTS and HTTP/2.
-- **Local Loopback:** Pi-hole DNS resolves `plexdp.homelab-admin.me` directly to NPM (`192.168.120.211`) for zero-latency local LAN playback.
+- **Local Loopback:** Pi-hole DNS resolves `plexdp.homelab-admin.me` directly to NPM (`VLAN 120 (DMZ)`) for zero-latency local LAN playback.
 
 ---
 
@@ -38,27 +38,27 @@
 
 | Parameter | Value | Details |
 |---|---|---|
-| **Host Node** | `Dapitan` (`192.168.1.27`) | Node 3 in `Homelab-Net` cluster |
+| **Host Node** | `Dapitan` (`VLAN 1 [Management]`) | Node 3 in `Homelab-Net` cluster |
 | **Container ID** | `509` | Proxmox LXC container |
 | **Hostname** | `plex-dapitan` | Container hostname |
-| **Static IP Address** | `192.168.110.44/24` | Configured on `vmbr0`, `tag=110`, `gw=192.168.110.1` |
+| **Static IP Address** | `VLAN 110 (Services)/24` | Configured on `vmbr0`, `tag=110`, `gw=VLAN 110 (Services)` |
 | **MAC Address** | `00:11:22:33:44:55` | Preserved hardware MAC address |
 | **Internal Service Port** | `32400` (TCP) | Default Plex Media Server HTTP port |
 | **Public FQDN** | `plexdp.homelab-admin.me` | Custom subdomain for Plex Dapitan |
-| **Reverse Proxy Host** | `192.168.120.211:81` | Cebu CT 105 (NPM) |
+| **Reverse Proxy Host** | `VLAN 120 (DMZ):81` | Cebu CT 105 (NPM) |
 
 ---
 
 ## 3. Steps Executed
 
 ### Step 1: Migrate CT 509 to SERVICES VLAN 110
-Executed on host `Dapitan` (`192.168.1.27`):
+Executed on host `Dapitan` (`VLAN 1 [Management]`):
 ```bash
 # Gracefully stop container
 pct stop 509
 
-# Reassign network interface to VLAN 110 with static IP 192.168.110.44/24
-pct set 509 -net0 name=eth0,bridge=vmbr0,gw=192.168.110.1,hwaddr=00:11:22:33:44:55,ip=192.168.110.44/24,tag=110,type=veth
+# Reassign network interface to VLAN 110 with static IP VLAN 110 (Services)/24
+pct set 509 -net0 name=eth0,bridge=vmbr0,gw=VLAN 110 (Services),hwaddr=00:11:22:33:44:55,ip=VLAN 110 (Services)/24,tag=110,type=veth
 
 # Start container
 pct start 509
@@ -73,7 +73,7 @@ Created DNS `A` record via Cloudflare API (`Zone: homelab-admin.me`):
 - **TTL:** Auto
 
 ### Step 3: Configure Pi-hole Local DNS Override
-Added `192.168.120.211 plexdp.homelab-admin.me` to `/etc/pihole/custom.list` on:
+Added `VLAN 120 (DMZ) plexdp.homelab-admin.me` to `/etc/pihole/custom.list` on:
 - Bulakan Pi-hole Primary (CT 301)
 - Cebu Pi-hole Secondary (CT 401)
 Reloaded DNS lists via `/usr/local/bin/pihole restartdns reload-lists`.
@@ -82,7 +82,7 @@ Reloaded DNS lists via `/usr/local/bin/pihole restartdns reload-lists`.
 Configured Proxy Host 12 in NPM database and generated `/data/nginx/proxy_host/12.conf`:
 - **Domain:** `plexdp.homelab-admin.me`
 - **Scheme:** `http`
-- **Forward Host / Port:** `192.168.110.44:32400`
+- **Forward Host / Port:** `VLAN 110 (Services):32400`
 - **SSL:** `*.homelab-admin.me` (ID: 3)
 - **Toggles:** Force SSL, HTTP/2 Support, HSTS Enabled, Websockets Support
 - **Advanced Directives:**
@@ -102,7 +102,7 @@ Configured Proxy Host 12 in NPM database and generated `/data/nginx/proxy_host/1
 ### Step 5: Update Plex Server Preferences on CT 509
 Updated `/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml`:
 - `customConnections="https://plexdp.homelab-admin.me:443"`
-- `lanNetworks="192.168.110.0/24,192.168.1.0/24,192.168.120.0/24"`
+- `lanNetworks="VLAN 110 (Services)/24,VLAN 1 (Management)/24,VLAN 120 (DMZ)/24"`
 - `RelayEnabled="0"`
 Restarted `plexmediaserver.service`.
 
@@ -113,13 +113,13 @@ Restarted `plexmediaserver.service`.
 1. **Local Network IP Verification:**
    ```bash
    pct exec 509 -- ip addr show eth0
-   # Result: inet 192.168.110.44/24 scope global eth0
+   # Result: inet VLAN 110 (Services)/24 scope global eth0
    ```
 
 2. **NPM to Plex HTTP Proxy Test:**
    ```bash
-   pct exec 105 -- curl -Is http://192.168.110.44:32400/web
-   # Result: HTTP/1.1 302 Moved Temporarily (Location: http://192.168.110.44:32400/web/index.html)
+   pct exec 105 -- curl -Is http://VLAN 110 (Services):32400/web
+   # Result: HTTP/1.1 302 Moved Temporarily (Location: http://VLAN 110 (Services):32400/web/index.html)
    ```
 
 3. **HTTP to HTTPS 301 Redirection:**
@@ -148,7 +148,7 @@ If rollback is needed:
 
 1. **Revert CT 509 Network:**
    ```bash
-   pct set 509 -net0 name=eth0,bridge=vmbr0,gw=192.168.1.1,hwaddr=00:11:22:33:44:55,ip=192.168.1.44/24,type=veth
+   pct set 509 -net0 name=eth0,bridge=vmbr0,gw=VLAN 1 [Gateway],hwaddr=00:11:22:33:44:55,ip=VLAN 1 (Management)/24,type=veth
    pct reboot 509
    ```
 
@@ -163,7 +163,7 @@ If rollback is needed:
    Inside CT 105, restore `/data/database.sqlite.bak-2026-08-15` to `/data/database.sqlite`, delete `/data/nginx/proxy_host/12.conf`, and run `nginx -s reload`.
 
 4. **Revert Pi-hole DNS:**
-   Remove `192.168.120.211 plexdp.homelab-admin.me` from `/etc/pihole/custom.list` on CT 301 and CT 401 and reload DNS.
+   Remove `VLAN 120 (DMZ) plexdp.homelab-admin.me` from `/etc/pihole/custom.list` on CT 301 and CT 401 and reload DNS.
 
 ---
 

@@ -12,7 +12,7 @@ The Arr stack is deployed on the secondary Proxmox node (`Cebu`) to distribute t
 
 | Parameter | Specification | Rationale |
 | :--- | :--- | :--- |
-| **Host Node** | `Cebu` (192.168.1.26) | Workload distribution across the homelab cluster. |
+| **Host Node** | `Cebu` (VLAN 1 [Management]) | Workload distribution across the homelab cluster. |
 | **Instance Type** | Unprivileged LXC + Nesting | Required to run Docker securely within an LXC with minimal resource overhead. |
 | **Operating System** | Debian 12 | Stable foundation for Docker workloads. |
 | **CPU Allocation** | 2 Cores | Sufficient for API polling, UI serving, and lightweight tasks. |
@@ -26,14 +26,14 @@ The Arr stack is deployed on the secondary Proxmox node (`Cebu`) to distribute t
 ### 1. Host Storage Mapping
 Because unprivileged LXCs cannot safely mount SMB shares directly, the TrueNAS storage must be mounted to the Cebu Proxmox host and bind-mounted into the LXC.
 
-1. SSH into the **Cebu Host** (`192.168.1.26`).
+1. SSH into the **Cebu Host** (`VLAN 1 [Management]`).
 2. Create the mount point:
    ```bash
    mkdir -p /mnt/truenas/seagate
    ```
 3. Append the CIFS mount to `/etc/fstab` (using your existing `/etc/samba/credentials-seagate` file):
    ```text
-   //192.168.1.211/seagate /mnt/truenas/seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100000,gid=100000,file_mode=0775,dir_mode=0775,nofail 0 0
+   //VLAN 1 (Management)/seagate /mnt/truenas/seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100000,gid=100000,file_mode=0775,dir_mode=0775,nofail 0 0
    ```
    *(Note: `uid=100000,gid=100000` maps to the unprivileged root inside the LXC)*
 5. Mount the share:
@@ -112,7 +112,7 @@ services:
       - OPENVPN_USER=YOUR_SURFSHARK_SERVICE_USER
       - OPENVPN_PASSWORD=YOUR_SURFSHARK_SERVICE_PASSWORD
       - SURFSHARK_COUNTRY=Netherlands
-      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24 # Required to access Jackett from your LAN
+      - FIREWALL_OUTBOUND_SUBNETS=VLAN 1 (Management)/24 # Required to access Jackett from your LAN
       - TZ=America/Los_Angeles
     restart: always
 
@@ -250,7 +250,7 @@ When configuring Radarr and Sonarr, navigate to **Settings > Media Management** 
 > The returned IP should be a Surfshark server IP, not your home IP.
 
 ## ✅ Outcome
-- The Debian LXC container (`arr-stack-cebu`, IP `192.168.1.42`) was successfully provisioned with Nesting and Keyctl enabled.
+- The Debian LXC container (`arr-stack-cebu`, IP `VLAN 1 (Management)`) was successfully provisioned with Nesting and Keyctl enabled.
 - The TrueNAS SMB share (`/mnt/truenas/seagate/share`) was mapped to the host and bind-mounted to the LXC for native I/O performance.
 - Gluetun was successfully configured with Surfshark OpenVPN credentials, ensuring encrypted routing for Jackett.
 - Sonarr, Radarr, Bazarr, Prowlarr, Jackett, FlareSolverr, and Wizarr were successfully deployed via Docker Compose and are accessible on the network.

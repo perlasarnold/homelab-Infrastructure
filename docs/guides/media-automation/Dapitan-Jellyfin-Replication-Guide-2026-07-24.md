@@ -6,7 +6,7 @@
 
 ## Objective
 
-Provision and replicate the **Jellyfin Media Server** container (`jellyfin-dapitan`, LXC Container `510`) on the **Dapitan** Proxmox VE host (`192.168.1.27`) from the existing Cebu Jellyfin server (CT `416`), attaching the local 18TB ZFS media dataset path `/mnt/bindmounts/media-data/library` (`\\192.168.1.27\media-data\library`).
+Provision and replicate the **Jellyfin Media Server** container (`jellyfin-dapitan`, LXC Container `510`) on the **Dapitan** Proxmox VE host (`VLAN 1 [Management]`) from the existing Cebu Jellyfin server (CT `416`), attaching the local 18TB ZFS media dataset path `/mnt/bindmounts/media-data/library` (`\\VLAN 1 [Management]\media-data\library`).
 
 ---
 
@@ -14,22 +14,22 @@ Provision and replicate the **Jellyfin Media Server** container (`jellyfin-dapit
 
 | Parameter | Value | Details |
 |---|---|---|
-| **Host Node** | `Dapitan` (`192.168.1.27`) | Node 3 in `Homelab-Net` cluster |
+| **Host Node** | `Dapitan` (`VLAN 1 [Management]`) | Node 3 in `Homelab-Net` cluster |
 | **Container ID** | `510` | Proxmox LXC container |
 | **Hostname** | `jellyfin-dapitan` | Container hostname |
 | **OS Template** | Debian 12 (bookworm) | Standard minimal Debian LXC template |
-| **IP Address** | `192.168.1.43` | Configured on `vmbr0` bridge |
+| **IP Address** | `VLAN 1 (Management)` | Configured on `vmbr0` bridge |
 | **Service Listening Port** | `8096` (TCP) | Default Jellyfin HTTP port |
-| **Web Access URL** | **[http://192.168.1.43:8096](http://192.168.1.43:8096)** | Web interface URL |
+| **Web Access URL** | **[http://VLAN 1 (Management):8096](http://VLAN 1 (Management):8096)** | Web interface URL |
 | **Media Mount Path** | `/media/library` | LXC bind-mount from host `/mnt/bindmounts/media-data/library` |
 
 ---
 
 ## Troubleshooting & Network Resolution
 
-- **Issue**: Initial static IP `192.168.1.210` caused TCP connection resets (`ERR_CONNECTION_REFUSED`) from local network clients due to router ARP table routing behavior for static IPs outside the router's active DHCP range.
-- **Resolution**: Updated container network interface `net0` to IP `192.168.1.43/24` (Gateway `192.168.1.1`), created `/usr/share/jellyfin/web` to `/var/lib/jellyfin/wwwroot` static asset symlink, and set explicit local network subnet permissions in `/etc/jellyfin/network.xml`.
-- **Result**: External LAN requests return `HTTP 200 OK` instantly on `http://192.168.1.43:8096`.
+- **Issue**: Initial static IP `VLAN 1 [Management]` caused TCP connection resets (`ERR_CONNECTION_REFUSED`) from local network clients due to router ARP table routing behavior for static IPs outside the router's active DHCP range.
+- **Resolution**: Updated container network interface `net0` to IP `VLAN 1 (Management)/24` (Gateway `VLAN 1 [Gateway]`), created `/usr/share/jellyfin/web` to `/var/lib/jellyfin/wwwroot` static asset symlink, and set explicit local network subnet permissions in `/etc/jellyfin/network.xml`.
+- **Result**: External LAN requests return `HTTP 200 OK` instantly on `http://VLAN 1 (Management):8096`.
 
 ---
 
@@ -46,7 +46,7 @@ pct create 510 PNAS:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst \
   --storage vm-fast \
   --rootfs vm-fast:32 \
   --features keyctl=1,nesting=1 \
-  --net0 name=eth0,bridge=vmbr0,ip=192.168.1.243/24,gw=192.168.1.1 \
+  --net0 name=eth0,bridge=vmbr0,ip=VLAN 1 (Management)/24,gw=VLAN 1 [Gateway] \
   --mp0 /mnt/bindmounts/media-data/library,mp=/media/library \
   --onboot 1 \
   --unprivileged 1
@@ -78,15 +78,15 @@ apt-get install -y jellyfin
 Synchronized user accounts, watched status, plugins, and metadata databases directly from `jellyfin-cebu` (CT 416) to `jellyfin-dapitan` (CT 510):
 ```bash
 # Stop Jellyfin on both containers
-ssh root@192.168.1.27 "pct exec 510 -- systemctl stop jellyfin"
-ssh root@192.168.1.26 "pct exec 416 -- systemctl stop jellyfin"
+ssh root@VLAN 1 [Management] "pct exec 510 -- systemctl stop jellyfin"
+ssh root@VLAN 1 [Management] "pct exec 416 -- systemctl stop jellyfin"
 
 # Transfer data structures
-ssh root@192.168.1.26 "pct exec 416 -- tar -cf - /var/lib/jellyfin /etc/jellyfin" | \
-  ssh root@192.168.1.27 "pct exec 510 -- tar -xf - -C /"
+ssh root@VLAN 1 [Management] "pct exec 416 -- tar -cf - /var/lib/jellyfin /etc/jellyfin" | \
+  ssh root@VLAN 1 [Management] "pct exec 510 -- tar -xf - -C /"
 
 # Restart Cebu Jellyfin
-ssh root@192.168.1.26 "pct exec 416 -- systemctl start jellyfin"
+ssh root@VLAN 1 [Management] "pct exec 416 -- systemctl start jellyfin"
 ```
 
 ### 4. Network Configuration & Web Root Symlink
@@ -104,14 +104,14 @@ pct exec 510 -- systemctl restart jellyfin
 - **Service Status**: `jellyfin.service` is `active (running)`.
 - **Port Listening**: TCP port `8096` listening on `0.0.0.0:8096`.
 - **Local HTTP Test**: `curl -Is http://127.0.0.1:8096` returned `HTTP/1.1 302 Found`.
-- **LAN Web Interface Test**: `(Invoke-WebRequest -Uri 'http://192.168.1.43:8096/web/index.html').StatusCode` returned `200`.
+- **LAN Web Interface Test**: `(Invoke-WebRequest -Uri 'http://VLAN 1 (Management):8096/web/index.html').StatusCode` returned `200`.
 - **Media Library Mount**: `/media/library` (`movies` and `tv` datasets) confirmed readable by system user `jellyfin`.
 
 ---
 
 ## Outcome
 
-Dapitan Jellyfin Media Server (CT `510`) is online and accessible at **[http://192.168.1.43:8096](http://192.168.1.43:8096)** with all user accounts and configuration cloned from Cebu, attached directly to host dataset `\\192.168.1.27\media-data\library` (`/media/library`).
+Dapitan Jellyfin Media Server (CT `510`) is online and accessible at **[http://VLAN 1 (Management):8096](http://VLAN 1 (Management):8096)** with all user accounts and configuration cloned from Cebu, attached directly to host dataset `\\VLAN 1 [Management]\media-data\library` (`/media/library`).
 
 ---
 

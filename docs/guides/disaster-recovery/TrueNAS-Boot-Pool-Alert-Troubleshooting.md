@@ -8,7 +8,7 @@
 
 ## 1. Problem Statement
 
-The TrueNAS SCALE web interface (IP `192.168.1.211`) displayed an active warning bell icon with 1 critical system alert:
+The TrueNAS SCALE web interface (IP `VLAN 1 (Management)`) displayed an active warning bell icon with 1 critical system alert:
 
 > **Alert Text**: *"Boot pool status is ONLINE: One or more devices has experienced an unrecoverable error. An attempt was made to correct the error. Applications are unaffected."*
 
@@ -16,7 +16,7 @@ The TrueNAS SCALE web interface (IP `192.168.1.211`) displayed an active warning
 
 ## 2. Investigation & Root Cause Analysis
 
-To diagnose whether this was a physical SSD failure on the hypervisor host or a minor virtualized transient I/O glitch, we conducted automated system checks from the Proxmox Cebu host (`192.168.1.26`).
+To diagnose whether this was a physical SSD failure on the hypervisor host or a minor virtualized transient I/O glitch, we conducted automated system checks from the Proxmox Cebu host (`VLAN 1 [Management]`).
 
 ### Step 1: Query TrueNAS Alerts via Guest Agent
 Using the QEMU Guest Agent inside VM 120, we queried the TrueNAS API middlewared service:

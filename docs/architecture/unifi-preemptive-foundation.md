@@ -26,24 +26,24 @@ In UniFi Network Console, go to **Settings ➡️ Networks ➡️ Add New Networ
 
 1. **`MGMT` (Management Zone)**
    * **VLAN ID:** `10`
-   * **Gateway IP/Subnet:** `192.168.10.1/24`
-   * **DHCP Range:** `192.168.10.200 - 192.168.10.249`
+   * **Gateway IP/Subnet:** `VLAN 10 (SecOps)/24`
+   * **DHCP Range:** `VLAN 10 (SecOps) - VLAN 10 (SecOps)`
 2. **`TRUSTED` (Admin Workstations)**
    * **VLAN ID:** `20`
-   * **Gateway IP/Subnet:** `192.168.20.1/24`
-   * **DHCP Range:** `192.168.20.100 - 192.168.20.249`
+   * **Gateway IP/Subnet:** `VLAN 20 (Trusted)/24`
+   * **DHCP Range:** `VLAN 20 (Trusted) - VLAN 20 (Trusted)`
 3. **`IOT` (Smart Home & Devices)**
    * **VLAN ID:** `30`
-   * **Gateway IP/Subnet:** `192.168.30.1/24`
-   * **DHCP Range:** `192.168.30.100 - 192.168.30.249`
+   * **Gateway IP/Subnet:** `VLAN 30 [Gateway]/24`
+   * **DHCP Range:** `VLAN 30 (IoT) - VLAN 30 (IoT)`
 4. **`SERVICES` (Internal Applications)**
-   * **VLAN ID:** `110` *(or `42` if retaining legacy `192.168.42.0/24`)*
-   * **Gateway IP/Subnet:** `192.168.110.1/24`
-   * **DHCP Range:** `192.168.110.100 - 192.168.110.249`
+   * **VLAN ID:** `110` *(or `42` if retaining legacy `VLAN 110 (Services)/24`)*
+   * **Gateway IP/Subnet:** `VLAN 110 (Services)/24`
+   * **DHCP Range:** `VLAN 110 (Services) - VLAN 110 (Services)`
 5. **`DMZ` (Public Facing Ingress)**
    * **VLAN ID:** `120`
-   * **Gateway IP/Subnet:** `192.168.120.1/24`
-   * **DHCP Range:** `192.168.120.100 - 192.168.120.249`
+   * **Gateway IP/Subnet:** `VLAN 120 (DMZ)/24`
+   * **DHCP Range:** `VLAN 120 (DMZ) - VLAN 120 (DMZ)`
 
 > [!NOTE]
 > Creating these networks defines the subnet gateway IPs on the gateway router. It does **not** force existing devices off VLAN 1 until switch ports or virtual interfaces are tagged.
@@ -55,8 +55,8 @@ In UniFi Network Console, go to **Devices ➡️ USW Pro Max 16 ➡️ Port Mana
 
 1. Select ports connected to hypervisor nodes:
    * **Bulakan** (Port 7 / Bond)
-   * **Cebu** (Port connected to `192.168.1.26`)
-   * **Dapitan** (Port connected to `192.168.1.27`)
+   * **Cebu** (Port connected to `VLAN 1 [Management]`)
+   * **Dapitan** (Port connected to `VLAN 1 [Management]`)
 2. Configure Port Settings:
    * **Native Network (Untagged):** `Default (VLAN 1)` *(remains active for current host IPs)*
    * **Tagged VLAN Management / Traffic Restriction:** Set to **Allow All** (or check VLANs 10, 20, 30, 110, 120).
@@ -74,9 +74,9 @@ In UniFi Network Console, go to **Settings ➡️ Security ➡️ Firewall ➡�
    * Types: IPv4 Subnet / CIDR
    * Addresses: `192.168.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12`
 2. **IP Group: `Storage Hosts`**
-   * Addresses: `192.168.1.12`, `192.168.1.13`, `192.168.1.211`, `192.168.10.12`, `192.168.10.15`
+   * Addresses: `VLAN 1 [Management]`, `VLAN 1 [Management]`, `VLAN 1 (Management)`, `VLAN 10 (SecOps)`, `VLAN 10 (SecOps)`
 3. **IP Group: `DNS Resolvers`**
-   * Addresses: `192.168.1.5`, `192.168.1.6`, `192.168.110.5`, `192.168.110.6`
+   * Addresses: `VLAN 1 [Secondary DNS]`, `VLAN 1 (Management)`, `VLAN 110 (Services)`, `VLAN 110 (Services)`
 4. **Port Group: `Storage Shares`**
    * Ports: `445` (SMB), `139` (NetBIOS), `2049` (NFS)
 5. **Port Group: `DNS`**

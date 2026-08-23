@@ -6,7 +6,7 @@
 
 ## Objective
 
-Troubleshoot, restore, and document the inaccessible **Plex Media Server** container (`plex-dapitan`, LXC Container `509`) on the **Dapitan** Proxmox VE host (`192.168.1.27`), ensuring static IP access at `192.168.1.208:32400` and direct access to attached 18TB ZFS media storage (`/mnt/bindmounts/media-data/library`).
+Troubleshoot, restore, and document the inaccessible **Plex Media Server** container (`plex-dapitan`, LXC Container `509`) on the **Dapitan** Proxmox VE host (`VLAN 1 [Management]`), ensuring static IP access at `VLAN 1 (Management):32400` and direct access to attached 18TB ZFS media storage (`/mnt/bindmounts/media-data/library`).
 
 ---
 
@@ -14,12 +14,12 @@ Troubleshoot, restore, and document the inaccessible **Plex Media Server** conta
 
 | Parameter | Value | Details |
 |---|---|---|
-| **Host Node** | `Dapitan` (`192.168.1.27`) | Node 3 in `Homelab-Net` cluster |
+| **Host Node** | `Dapitan` (`VLAN 1 [Management]`) | Node 3 in `Homelab-Net` cluster |
 | **Container ID** | `509` | Proxmox LXC container |
 | **Hostname** | `plex-dapitan` | Local container hostname |
-| **Static IP Address** | `192.168.1.44` | Configured on `vmbr0` bridge |
+| **Static IP Address** | `VLAN 1 (Management)` | Configured on `vmbr0` bridge |
 | **Service Listening Port** | `32400` (TCP) | Default Plex Media Server HTTP port |
-| **Web Access URL** | **[http://192.168.1.44:32400/web](http://192.168.1.44:32400/web)** | Web interface setup & management URL |
+| **Web Access URL** | **[http://VLAN 1 (Management):32400/web](http://VLAN 1 (Management):32400/web)** | Web interface setup & management URL |
 | **Media Mount Path** | `/media/library` | LXC bind-mount from host `/mnt/bindmounts/media-data/library` |
 
 ---
@@ -27,7 +27,7 @@ Troubleshoot, restore, and document the inaccessible **Plex Media Server** conta
 ## Investigation & Root Cause
 
 1. **Inaccessible IP Diagnosis**:
-   - Navigation to `http://192.168.1.208:32400/web` timed out or returned connection refused.
+   - Navigation to `http://VLAN 1 (Management):32400/web` timed out or returned connection refused.
    - Proxmox container audit showed CT 509 (`plex-dapitan`) was active on host `Dapitan`, but service checks returned `Unit plexmediaserver.service could not be found`.
 2. **Root Cause**:
    - Container `509` was initialised with temporary dynamic DHCP networking and an interrupted setup script in `/tmp/setup-plex.sh`.
@@ -40,7 +40,7 @@ Troubleshoot, restore, and document the inaccessible **Plex Media Server** conta
 ### 1. Network Configuration Standardisation
 Configured static IP allocation for CT 509 on host `Dapitan` to ensure IP stability:
 ```bash
-pct set 509 -net0 name=eth0,bridge=vmbr0,hwaddr=00:11:22:33:44:55,ip=192.168.1.208/24,gw=192.168.1.1
+pct set 509 -net0 name=eth0,bridge=vmbr0,hwaddr=00:11:22:33:44:55,ip=VLAN 1 (Management)/24,gw=VLAN 1 [Gateway]
 pct reboot 509
 ```
 
@@ -73,13 +73,13 @@ Verified readability of `/media/library/movies` and `/media/library/tv` datasets
 - **Service Status**: `plexmediaserver.service` is `active (running)`.
 - **Port Listening**: TCP port `32400` listening on `0.0.0.0:32400`.
 - **Local HTTP Response**: `curl -Is http://127.0.0.1:32400/web` returned `HTTP/1.1 302 Moved Temporarily`.
-- **LAN Access Response**: `curl.exe -Is http://192.168.1.44:32400/web` returned `HTTP/1.1 302 Moved Temporarily`.
+- **LAN Access Response**: `curl.exe -Is http://VLAN 1 (Management):32400/web` returned `HTTP/1.1 302 Moved Temporarily`.
 
 ---
 
 ## Outcome
 
-Dapitan Plex Media Server (CT 509) is fully online, listening on port `32400`, and accessible across the network at **[http://192.168.1.44:32400/web](http://192.168.1.44:32400/web)**. Media libraries `/media/library/movies` and `/media/library/tv` on the 18TB ZFS dataset are attached and ready for indexing.
+Dapitan Plex Media Server (CT 509) is fully online, listening on port `32400`, and accessible across the network at **[http://VLAN 1 (Management):32400/web](http://VLAN 1 (Management):32400/web)**. Media libraries `/media/library/movies` and `/media/library/tv` on the 18TB ZFS dataset are attached and ready for indexing.
 
 ---
 

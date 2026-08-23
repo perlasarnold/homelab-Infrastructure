@@ -5,7 +5,7 @@
 variable "proxmox_endpoint" {
   description = "Full URL to the Proxmox API (include port 8006)"
   type        = string
-  default     = "https://192.168.1.25:8006"
+  default     = "https://VLAN 1 [Management]:8006"
 }
 
 variable "proxmox_api_token" {

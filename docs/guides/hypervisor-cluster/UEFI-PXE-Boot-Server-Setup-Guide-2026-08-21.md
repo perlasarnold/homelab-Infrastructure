@@ -1,7 +1,7 @@
 ﻿# 🚀 UEFI PXE Boot & Automated OS Installation Setup Guide (Dapitan Tiered-Storage Architecture)
 
 - **Date:** August 21, 2026
-- **Target Node:** **Dapitan** (192.168.1.27 / 192.168.10.27)
+- **Target Node:** **Dapitan** (VLAN 1 [Management] / VLAN 10 (SecOps))
 - **Objective:** Deploy an ultra-efficient UEFI/BIOS PXE Boot, TFTP, and HTTP Kickstart server inside **CT 513** (pxe-dapitan) on **VLAN 110 (Services)** with domain **pxe.homelab-admin.me**, leveraging Dapitan's **1TB SSD (m-fast)** for fast I/O and **18TB HDD (ulk18)** for mass OS repository/ISO storage.
 - **Reference Article:** [Red Hat: How to set up PXE boot for UEFI hardware](https://www.redhat.com/en/blog/pxe-boot-uefi)
 - **Maintainer:** Perlas
@@ -46,14 +46,14 @@ To avoid filling Dapitan's **1TB SSD (m-fast)** with heavy ISOs and operating s
 | **LXC Container** | **CT 513** (pxe-dapitan) | m-fast:8 (SSD) | Small 8GB rootfs; fast system boots and package updates |
 | **Bootloader / TFTP** | /var/lib/tftpboot | m-fast (SSD) | Instant TFTP response time for shimx64.efi & grubx64.efi |
 | **Mass OS Trees / ISOs** | /var/www/html/os | ulk18/pxe-data (HDD) | Mass storage bind mount with ZFS zstd compression |
-| **Static IP & VLAN** | 192.168.110.55/24 (Tag 110) | VLAN 110 Services | Gateway: 192.168.110.1 |
+| **Static IP & VLAN** | VLAN 110 (Services)/24 (Tag 110) | VLAN 110 Services | Gateway: VLAN 110 (Services) |
 | **Private DNS** | pxe.homelab-admin.me | Pi-hole Local DNS | Restricted strictly to local LAN subnets |
 
 ---
 
 ## 🛠️ Step 1: Create Host ZFS Dataset on Dapitan (ulk18)
 
-Execute directly on **Dapitan Proxmox Host** (192.168.1.27):
+Execute directly on **Dapitan Proxmox Host** (VLAN 1 [Management]):
 
 `ash
 # 1. Create optimized ZFS dataset on bulk18 for ISOs and OS repositories
@@ -81,8 +81,8 @@ pct create 513 local:vztmpl/almalinux-9-default_*.tar.xz \
   --memory 2048 \
   --swap 1024 \
   --features nesting=1 \
-  --net0 name=eth0,bridge=vmbr0,tag=110,ip=192.168.110.55/24,gw=192.168.110.1 \
-  --nameserver 192.168.110.5 \
+  --net0 name=eth0,bridge=vmbr0,tag=110,ip=VLAN 110 (Services)/24,gw=VLAN 110 (Services) \
+  --nameserver VLAN 110 (Services) \
   --storage vm-fast \
   --rootfs vm-fast:8 \
   --unprivileged 0 \
@@ -101,7 +101,7 @@ pct start 513
 
 In your Pi-hole Web Admin (**Local DNS** → **DNS Records**):
 - **Domain:** pxe.homelab-admin.me
-- **IP Address:** 192.168.110.55
+- **IP Address:** VLAN 110 (Services)
 
 ---
 
@@ -145,7 +145,7 @@ Create /etc/nginx/conf.d/pxe.conf inside CT 513:
 ginx
 server {
     listen 80;
-    server_name pxe.homelab-admin.me 192.168.110.55 pxe.local;
+    server_name pxe.homelab-admin.me VLAN 110 (Services) pxe.local;
     root /var/www/html;
 
     # 🔒 Local LAN only security

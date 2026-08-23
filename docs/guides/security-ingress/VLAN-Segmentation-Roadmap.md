@@ -8,7 +8,7 @@
 
 ## 🏗️ The Problem: The "Flat Network" Risk
 
-Currently, most of the Homelab-Net hypervisors, VM storage interfaces, Pi-hole servers, media stack (Radarr, Sonarr, Plex, Jellyfin), and daily-use devices sit directly on the native **VLAN 1 (`192.168.1.0/24`)**. 
+Currently, most of the Homelab-Net hypervisors, VM storage interfaces, Pi-hole servers, media stack (Radarr, Sonarr, Plex, Jellyfin), and daily-use devices sit directly on the native **VLAN 1 (`VLAN 1 (Management)/24`)**. 
 If a single container (e.g. an internet-exposed reverse proxy or a torrent client) is compromised, an attacker can immediately pivot to:
 1. **Hypervisor Hosts:** Direct access to Proxmox Bulakan/Cebu GUI, SSH, and cluster synchronization.
 2. **Core Storage:** Unrestricted mounting and admin access to Synology PNAS/PNAS2 and TrueNAS SCALE ZFS pools.
@@ -26,17 +26,17 @@ To achieve robust security without breaking communications, we will partition th
 ├───────┬──────────────┬───────────────────┬──────────────────────────────────────┤
 │ VLAN  │ Name         │ Subnet            │ Target Devices                       │
 ├───────┼──────────────┼───────────────────┼──────────────────────────────────────┤
-│ 10    │ MGMT         │ 192.168.10.0/24   │ Proxmox Hosts, UniFi GW, switches,   │
+│ 10    │ MGMT         │ VLAN 10 (SecOps)/24   │ Proxmox Hosts, UniFi GW, switches,   │
 │       │              │                   │ Synology/TrueNAS Web UI, IPMI/iDRAC  │
 ├───────┼──────────────┼───────────────────┼──────────────────────────────────────┤
-│ 20    │ TRUSTED      │ 192.168.20.0/24   │ Admin PCs, trusted laptops, phones   │
+│ 20    │ TRUSTED      │ VLAN 20 (Trusted)/24   │ Admin PCs, trusted laptops, phones   │
 ├───────┼──────────────┼───────────────────┼──────────────────────────────────────┤
-│ 30    │ IOT          │ 192.168.30.0/24   │ Smart TVs, cameras, switches, bulbs  │
+│ 30    │ IOT          │ VLAN 30 (IoT)/24   │ Smart TVs, cameras, switches, bulbs  │
 ├───────┼──────────────┼───────────────────┼──────────────────────────────────────┤
-│ 110   │ SERVICES     │ 192.168.42.0/24   │ Plex, Jellyfin, Arr stack, Immich,   │
+│ 110   │ SERVICES     │ VLAN 110 (Services)/24   │ Plex, Jellyfin, Arr stack, Immich,   │
 │       │              │                   │ TrueNAS/Synology SMB storage links   │
 ├───────┼──────────────┼───────────────────┼──────────────────────────────────────┤
-│ 120   │ DMZ/EXTERNAL │ 192.168.120.0/24  │ Nginx Proxy Manager, Cloudflared     │
+│ 120   │ DMZ/EXTERNAL │ VLAN 120 (DMZ)/24  │ Nginx Proxy Manager, Cloudflared     │
 └───────┴──────────────┴───────────────────┴──────────────────────────────────────┘
 ```
 
@@ -89,7 +89,7 @@ To prevent service disruption (per ECC safety guidelines), we divide this transi
 
 1. **Define VLAN 120 on UniFi:**
    * Go to `Settings` ➡️ `Networks` ➡️ `New Network`.
-   * **Name:** `ExternalServices` | **VLAN ID:** `120` | **Gateway IP/Subnet:** `192.168.120.1/24`.
+   * **Name:** `ExternalServices` | **VLAN ID:** `120` | **Gateway IP/Subnet:** `VLAN 120 (DMZ)/24`.
    * Enable the **DHCP Server** on this VLAN.
 2. **Migrate Cloudflared and Nginx Proxy Manager:**
    * In Proxmox Bulakan, shut down Nginx Proxy Manager (CT 502) and Cloudflared (CT 304).
@@ -109,7 +109,7 @@ To prevent service disruption (per ECC safety guidelines), we divide this transi
 *Migrating the Arr stack, Immich, and Plex. These apps need local communication with each other and fileserver mount access.*
 
 1. **Define VLAN 110 on UniFi:**
-   * **Name:** `InternalServices` | **VLAN ID:** `110` | **Gateway IP/Subnet:** `192.168.42.1/24`.
+   * **Name:** `InternalServices` | **VLAN ID:** `110` | **Gateway IP/Subnet:** `VLAN 110 [Gateway]/24`.
 2. **Move Media Containers to VLAN 110:**
    * Add the `110` VLAN tag to the Network Device settings of Plex (CT 104), Sonarr (CT 106), Radarr (CT 105), Bazarr (CT 107), Transmission (CT 112), and Immich (VM 204).
    * Re-assign static IPs within the `192.168.42.x` range if desired, or let DHCP hand out mappings.
@@ -117,7 +117,7 @@ To prevent service disruption (per ECC safety guidelines), we divide this transi
    * *Storage servers (Synology PNAS and TrueNAS SCALE VM) should ideally live in the Management or a dedicated Storage VLAN for safety.*
    * To allow the media stack on VLAN 110 to mount ZFS/SMB shares on your storage nodes:
      * In UniFi, create a **Port Group** containing the SMB ports (`445`, `139`) and NFS ports (`2049`).
-     * Create a **LAN In Rule**: Allow **VLAN 110** ➡️ **Storage IPs (TrueNAS `192.168.1.211` / Synology `192.168.1.12`)** on the **Storage Port Group**.
+     * Create a **LAN In Rule**: Allow **VLAN 110** ➡️ **Storage IPs (TrueNAS `VLAN 1 (Management)` / Synology `VLAN 1 [Management]`)** on the **Storage Port Group**.
      * Block all other general TCP/UDP access from the media stack to the storage web interfaces (ports `80`, `443`, `5001`, `81`).
 
 ---
@@ -126,7 +126,7 @@ To prevent service disruption (per ECC safety guidelines), we divide this transi
 *Smart TVs, thermostats, cameras, and hubs represent high security risks and must be isolated.*
 
 1. **Define VLAN 30 on UniFi:**
-   * **Name:** `IoT` | **VLAN ID:** `30` | **Gateway IP/Subnet:** `192.168.30.1/24`.
+   * **Name:** `IoT` | **VLAN ID:** `30` | **Gateway IP/Subnet:** `VLAN 30 [Gateway]/24`.
 2. **Broadcast Isolated Wireless Network:**
    * Create a new WiFi Network in UniFi.
    * **SSID:** `Sampaloc-IoT` | **Security:** WPA2-Personal | **Network:** select `IoT (VLAN 30)`.
@@ -141,12 +141,12 @@ To prevent service disruption (per ECC safety guidelines), we divide this transi
 *Once all services and clients are placed in their respective zones, we restrict the management interface.*
 
 1. **Establish the VLAN 10 Subnet:**
-   * **Name:** `Management` | **VLAN ID:** `10` | **Gateway IP/Subnet:** `192.168.10.1/24`.
+   * **Name:** `Management` | **VLAN ID:** `10` | **Gateway IP/Subnet:** `VLAN 10 (SecOps)/24`.
 2. **Map Switch ports & Hypervisor Interfaces:**
    * Move your Proxmox Bulakan/Cebu management IPs, UniFi Switch/AP IPs, and Synology DSM IP over to VLAN 10.
    * Update client configurations.
 3. **Secure Inter-VLAN DNS (Crucial):**
-   * Since your Pi-hole servers (`192.168.1.5` / `192.168.1.134`) provide DNS for the entire cluster:
+   * Since your Pi-hole servers (`VLAN 1 [Secondary DNS]` / `VLAN 1 [Management]`) provide DNS for the entire cluster:
      * Create a rule: **Allow All Networks** ➡️ **Pi-Hole IPs** on Port `53` (UDP/TCP).
      * This guarantees that devices on VLAN 110, 120, and 30 can resolve external sites, even though they cannot touch other management services.
 

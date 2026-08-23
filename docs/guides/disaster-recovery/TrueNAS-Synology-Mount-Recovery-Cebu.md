@@ -8,7 +8,7 @@
 
 ## 1. Problem Statement
 
-After the Proxmox **Cebu** server (`192.168.1.26`) booted, the Plex Media Server and Jellyfin-Cebu containers could not connect to their mounted drives. The CIFS storage hosts (TrueNAS VM at `192.168.1.211` and Synology NAS at `192.168.1.12`) were verified online and accessible from other network devices.
+After the Proxmox **Cebu** server (`VLAN 1 [Management]`) booted, the Plex Media Server and Jellyfin-Cebu containers could not connect to their mounted drives. The CIFS storage hosts (TrueNAS VM at `VLAN 1 (Management)` and Synology NAS at `VLAN 1 [Management]`) were verified online and accessible from other network devices.
 
 ---
 
@@ -54,16 +54,16 @@ To ensure that future reboots do not experience this mount failure, we modified 
 
 #### Diff of `/etc/fstab`
 ```diff
-- //192.168.1.211/seagate/Share /mnt/cebu-seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,nofail 0 0
-- //192.168.1.12/PlexMediaStorage /mnt/plex cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail 0 0
-- //192.168.1.12/Seagate /mnt/plex1 cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail 0 0
-- //192.168.1.211/photo /mnt/truenas-photo cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100999,gid=100991,file_mode=0777,dir_mode=0777,nofail 0 0
-- //192.168.1.211/seagate/Share /mnt/truenas/seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,uid=100000,gid=100000,file_mode=0775,dir_mode=0775,nofail 0 0
-+ //192.168.1.211/seagate/Share /mnt/cebu-seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,nofail,_netdev,x-systemd.automount 0 0
-+ //192.168.1.12/PlexMediaStorage /mnt/plex cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail,_netdev,x-systemd.automount 0 0
-+ //192.168.1.12/Seagate /mnt/plex1 cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail,_netdev,x-systemd.automount 0 0
-+ //192.168.1.211/photo /mnt/truenas-photo cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100999,gid=100991,file_mode=0777,dir_mode=0777,nofail,_netdev,x-systemd.automount 0 0
-+ //192.168.1.211/seagate/Share /mnt/truenas/seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,uid=100000,gid=100000,file_mode=0775,dir_mode=0775,nofail,_netdev,x-systemd.automount 0 0
+- //VLAN 1 (Management)/seagate/Share /mnt/cebu-seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,nofail 0 0
+- //VLAN 1 [Management]/PlexMediaStorage /mnt/plex cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail 0 0
+- //VLAN 1 [Management]/Seagate /mnt/plex1 cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail 0 0
+- //VLAN 1 (Management)/photo /mnt/truenas-photo cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100999,gid=100991,file_mode=0777,dir_mode=0777,nofail 0 0
+- //VLAN 1 (Management)/seagate/Share /mnt/truenas/seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,uid=100000,gid=100000,file_mode=0775,dir_mode=0775,nofail 0 0
++ //VLAN 1 (Management)/seagate/Share /mnt/cebu-seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,nofail,_netdev,x-systemd.automount 0 0
++ //VLAN 1 [Management]/PlexMediaStorage /mnt/plex cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail,_netdev,x-systemd.automount 0 0
++ //VLAN 1 [Management]/Seagate /mnt/plex1 cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nofail,_netdev,x-systemd.automount 0 0
++ //VLAN 1 (Management)/photo /mnt/truenas-photo cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,uid=100999,gid=100991,file_mode=0777,dir_mode=0777,nofail,_netdev,x-systemd.automount 0 0
++ //VLAN 1 (Management)/seagate/Share /mnt/truenas/seagate cifs credentials=/etc/samba/credentials-seagate,iocharset=utf8,vers=3.0,uid=100000,gid=100000,file_mode=0775,dir_mode=0775,nofail,_netdev,x-systemd.automount 0 0
 ```
 
 * Rationale:

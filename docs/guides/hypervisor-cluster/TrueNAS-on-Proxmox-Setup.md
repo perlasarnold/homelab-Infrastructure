@@ -4,8 +4,8 @@ This guide documents the high-performance deployment of TrueNAS SCALE (VM 120) o
 
 ## Environment Overview
 
-- **Node**: `cebu` (192.168.1.26)
-- **TrueNAS VM**: ID 120 (192.168.1.211)
+- **Node**: `cebu` (VLAN 1 [Management])
+- **TrueNAS VM**: ID 120 (VLAN 1 (Management))
 - **Host Pools**: `das-18tb-1`, `das-18tb-2`, `das-18tb-3`, `das-6tb`
 - **Target Storage**: ~60TB raw capacity presented via SMB/NFS.
 

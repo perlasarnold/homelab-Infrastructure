@@ -32,8 +32,8 @@ resource "unifi_network" "mgmt" {
   purpose       = "corporate"
   vlan_id       = 10
   subnet        = var.vlan_mgmt_cidr
-  dhcp_start    = "192.168.10.200"
-  dhcp_stop     = "192.168.10.249"
+  dhcp_start    = "VLAN 10 (SecOps)"
+  dhcp_stop     = "VLAN 10 (SecOps)"
   dhcp_enabled  = true
   domain_name   = "mgmt.homelab.internal"
 }
@@ -43,8 +43,8 @@ resource "unifi_network" "trusted" {
   purpose       = "corporate"
   vlan_id       = 20
   subnet        = var.vlan_trusted_cidr
-  dhcp_start    = "192.168.20.100"
-  dhcp_stop     = "192.168.20.249"
+  dhcp_start    = "VLAN 20 (Trusted)"
+  dhcp_stop     = "VLAN 20 (Trusted)"
   dhcp_enabled  = true
   domain_name   = "trusted.homelab.internal"
 }
@@ -65,8 +65,8 @@ resource "unifi_network" "services" {
   purpose       = "corporate"
   vlan_id       = 110
   subnet        = var.vlan_services_cidr
-  dhcp_start    = "192.168.110.100"
-  dhcp_stop     = "192.168.110.249"
+  dhcp_start    = "VLAN 110 (Services)"
+  dhcp_stop     = "VLAN 110 (Services)"
   dhcp_enabled  = true
   domain_name   = "services.homelab.internal"
 }
@@ -76,8 +76,8 @@ resource "unifi_network" "dmz" {
   purpose       = "corporate"
   vlan_id       = 120
   subnet        = var.vlan_dmz_cidr
-  dhcp_start    = "192.168.120.100"
-  dhcp_stop     = "192.168.120.249"
+  dhcp_start    = "VLAN 120 (DMZ)"
+  dhcp_stop     = "VLAN 120 (DMZ)"
   dhcp_enabled  = true
   domain_name   = "dmz.homelab.internal"
 }
@@ -102,11 +102,11 @@ resource "unifi_firewall_group" "storage_hosts" {
   type = "address-group"
 
   members = [
-    "192.168.1.12",
-    "192.168.1.13",
-    "192.168.1.211",
-    "192.168.10.12",
-    "192.168.10.15"
+    "VLAN 1 [Management]",
+    "VLAN 1 [Management]",
+    "VLAN 1 (Management)",
+    "VLAN 10 (SecOps)",
+    "VLAN 10 (SecOps)"
   ]
 }
 
@@ -115,10 +115,10 @@ resource "unifi_firewall_group" "dns_resolvers" {
   type = "address-group"
 
   members = [
-    "192.168.1.5",
-    "192.168.1.6",
-    "192.168.110.5",
-    "192.168.110.6"
+    "VLAN 1 [Secondary DNS]",
+    "VLAN 1 (Management)",
+    "VLAN 110 (Services)",
+    "VLAN 110 (Services)"
   ]
 }
 

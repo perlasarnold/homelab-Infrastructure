@@ -4,7 +4,7 @@ Scheduled tasks (Cron Jobs) allow you to automate scripts, maintenance commands,
 
 ## 1. Accessing the Tasks Menu
 
-1. Log in to your TrueNAS SCALE web interface (e.g., `192.168.1.211`).
+1. Log in to your TrueNAS SCALE web interface (e.g., `VLAN 1 (Management)`).
 2. On the left sidebar, click **System Settings**.
 3. Select **Advanced**.
 4. Find the **Cron Jobs** card and click **Add**.

@@ -13,8 +13,8 @@ set -Eeuo pipefail
 # 4. Bring up full Immich stack (server, machine learning, postgres, redis).
 # ==============================================================================
 
-BULAKAN_HOST="${BULAKAN_HOST:-192.168.1.25}"
-DAPITAN_HOST="${DAPITAN_HOST:-192.168.1.27}"
+BULAKAN_HOST="${BULAKAN_HOST:-VLAN 1 [Management]}"
+DAPITAN_HOST="${DAPITAN_HOST:-VLAN 1 [Management]}"
 SOURCE_ZVOL="${SOURCE_ZVOL:-/dev/zvol/Bulakan-ZFS/vm-204-disk-0-part2}"
 TEMP_MOUNT="${TEMP_MOUNT:-/mnt/immich-vm-temp}"
 TARGET_DATA_DIR="${TARGET_DATA_DIR:-/mnt/bindmounts/immich-data}"

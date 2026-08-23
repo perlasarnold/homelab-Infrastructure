@@ -1,7 +1,7 @@
 # 📦 Unraid Overview
 
-> **Host IP:** `192.168.1.24` | **Server Name:** Mercado  
-> **Web UI:** https://192.168.1.24 | **Unraid Version:** 7.2.4  
+> **Host IP:** `VLAN 1 (Management)` | **Server Name:** Mercado  
+> **Web UI:** https://VLAN 1 (Management) | **Unraid Version:** 7.2.4  
 > **Last Updated:** 2026-04-12 | **Maintainer:** Perlas  
 > **Status:** Production | **Reproducibility Score:** 8/10 (See Scalability Section)
 
@@ -49,7 +49,7 @@ Unraid is a **NAS (Network Attached Storage) operating system** that also runs D
 | Container | Network | Host Port(s) | Purpose |
 |-----------|---------|------------|---------|
 | audiobookshelf | bridge | 13378 | Audiobook & podcast server |
-| binhex-official-pihole | macvlan br0 | 192.168.1.3 | DNS ad-blocker |
+| binhex-official-pihole | macvlan br0 | VLAN 1 (Management) | DNS ad-blocker |
 | heimdall | bridge | 8088 | Application dashboard |
 | Jellyfin | host | 8096 | Open-source media server |
 | MariaDB-Official | bridge | 3306 | MySQL-compatible database |

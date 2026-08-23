@@ -17,23 +17,23 @@ When accessing `https://sonarr.homelab-admin.me/system/status`, the following he
 
 ### Root Cause
 1. **Legacy IP Mappings in Prowlarr & Sonarr:**
-   - When the Arr Stack LXC container (CT 417) was migrated from VLAN 1 (`192.168.1.42`) to SERVICES VLAN 110 (`192.168.110.42`), Prowlarr application sync configurations and Sonarr Torznab indexer URLs still retained the old `http://192.168.1.42:9696` and `http://192.168.1.42:8989` endpoints.
-   - Sonarr attempts to contact Prowlarr for RSS feeds and search queries failed with `System.Net.Sockets.SocketException (113): Host is unreachable (192.168.1.42:9696)`, placing all indexers in a disabled backoff state.
+   - When the Arr Stack LXC container (CT 417) was migrated from VLAN 1 (`VLAN 1 (Management)`) to SERVICES VLAN 110 (`VLAN 110 (Services)`), Prowlarr application sync configurations and Sonarr Torznab indexer URLs still retained the old `http://VLAN 1 (Management):9696` and `http://VLAN 1 (Management):8989` endpoints.
+   - Sonarr attempts to contact Prowlarr for RSS feeds and search queries failed with `System.Net.Sockets.SocketException (113): Host is unreachable (VLAN 1 (Management):9696)`, placing all indexers in a disabled backoff state.
 2. **Missing Download Client:**
-   - Sonarr had no configured download client entry pointing to the local Transmission daemon running behind Gluetun (`http://192.168.110.42:9091`).
+   - Sonarr had no configured download client entry pointing to the local Transmission daemon running behind Gluetun (`http://VLAN 110 (Services):9091`).
 
 ---
 
 ## 🛠️ Actions Taken
 
 ### 1. Prowlarr & Sonarr Network Endpoint Synchronization
-- Updated Prowlarr database (`prowlarr.db`) application definitions for Sonarr (`id=1`) and Radarr (`id=2`), migrating `prowlarrUrl` and `baseUrl` to `http://192.168.110.42:9696`, `http://192.168.110.42:8989`, and `http://192.168.110.42:7878`.
-- Updated Sonarr database (`sonarr.db`) indexer base URLs to `http://192.168.110.42:9696/1/`.
+- Updated Prowlarr database (`prowlarr.db`) application definitions for Sonarr (`id=1`) and Radarr (`id=2`), migrating `prowlarrUrl` and `baseUrl` to `http://VLAN 110 (Services):9696`, `http://VLAN 110 (Services):8989`, and `http://VLAN 110 (Services):7878`.
+- Updated Sonarr database (`sonarr.db`) indexer base URLs to `http://VLAN 110 (Services):9696/1/`.
 - Saved and tested application links in Prowlarr, triggering automatic sync for indexers (**LimeTorrents** and **The Pirate Bay**).
 
 ### 2. Transmission Download Client Configuration
 - Configured and linked the active Transmission client via Sonarr API (`/api/v3/downloadclient`):
-  - **Host:** `192.168.110.42`
+  - **Host:** `VLAN 110 (Services)`
   - **Port:** `9091`
   - **URL Base:** `/transmission/`
   - **Category:** `tv-sonarr`
@@ -49,7 +49,7 @@ When accessing `https://sonarr.homelab-admin.me/system/status`, the following he
 
 ## 🧪 Outcome
 - All 4 health errors and warnings were successfully cleared.
-- Sonarr is actively communicating with Prowlarr over SERVICES VLAN 110 (`192.168.110.42`) and downloading via Transmission through Gluetun VPN.
+- Sonarr is actively communicating with Prowlarr over SERVICES VLAN 110 (`VLAN 110 (Services)`) and downloading via Transmission through Gluetun VPN.
 
 ---
 

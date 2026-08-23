@@ -24,16 +24,16 @@
 │        │ (auth.homelab-admin.me)  │ (immich.homelab-admin.me)                  │
 │        ▼                        ▼                                           │
 │  [ Authentik (CT 103) ]   [ Immich (CT 504) ] ◄── SERVICES (VLAN 110)       │
-│  192.168.110.225:9000     192.168.110.47:2283                               │
+│  VLAN 110 (Services):9000     VLAN 110 (Services):2283                               │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 | Component | Node / Guest ID | IP Address | Subnet / VLAN | External Domain |
 | :--- | :--- | :--- | :--- | :--- |
-| **Authentik IdP** | Cebu CT 103 | `192.168.110.225` | SERVICES (VLAN 110) | `https://auth.homelab-admin.me` |
-| **Immich Server** | Dapitan CT 504 | `192.168.110.47` | SERVICES (VLAN 110) | `https://immich.homelab-admin.me` |
-| **Cloudflare Tunnel** | Bulakan CT 304 / Cebu CT 404 | `192.168.120.7` / `.6` | DMZ (VLAN 120) | `*.homelab-admin.me` |
+| **Authentik IdP** | Cebu CT 103 | `VLAN 110 (Services)` | SERVICES (VLAN 110) | `https://auth.homelab-admin.me` |
+| **Immich Server** | Dapitan CT 504 | `VLAN 110 (Services)` | SERVICES (VLAN 110) | `https://immich.homelab-admin.me` |
+| **Cloudflare Tunnel** | Bulakan CT 304 / Cebu CT 404 | `VLAN 120 (DMZ)` / `.6` | DMZ (VLAN 120) | `*.homelab-admin.me` |
 
 ---
 
@@ -43,11 +43,11 @@
 1. Updated Cebu CT 103 (`authentik`) Proxmox network interface (`net0`):
    * **Bridge:** `vmbr0`
    * **VLAN Tag:** `110`
-   * **IPv4/CIDR:** `192.168.110.225/24`
-   * **Gateway:** `192.168.110.1`
+   * **IPv4/CIDR:** `VLAN 110 (Services)/24`
+   * **Gateway:** `VLAN 110 (Services)`
 
 ### Step 2: Authentik Initial Admin Bootstrapping
-1. Navigated to `http://192.168.110.225:9000/if/flow/initial-setup/`.
+1. Navigated to `http://VLAN 110 (Services):9000/if/flow/initial-setup/`.
 2. Created the primary administrator password for `akadmin`.
 3. Verified administrative access at `https://auth.homelab-admin.me/if/admin/`.
 
@@ -88,10 +88,10 @@
 During deployment, four distinct issues were encountered and resolved:
 
 ### Issue 1: Gateway Typo Causing Network Timeout (`ERR_CONNECTION_TIMED_OUT`)
-* **Problem Statement:** Navigating to `http://192.168.110.225:9000` resulted in `This site can't be reached / 192.168.110.225 took too long to respond`.
+* **Problem Statement:** Navigating to `http://VLAN 110 (Services):9000` resulted in `This site can't be reached / VLAN 110 (Services) took too long to respond`.
 * **Investigation:** Inspected Proxmox CT 103 `net0` configuration modal.
-* **Root Cause:** A 1-digit typo occurred in the gateway field: `192.168.119.1` was entered instead of `192.168.110.1`.
-* **Correction:** Updated Gateway to `192.168.110.1` and rebooted CT 103.
+* **Root Cause:** A 1-digit typo occurred in the gateway field: `VLAN 110 [Gateway]` was entered instead of `VLAN 110 (Services)`.
+* **Correction:** Updated Gateway to `VLAN 110 (Services)` and rebooted CT 103.
 * **Prevention:** Double-check subnets when entering Class C gateways.
 
 ### Issue 2: Missing Required Authorization Flow Field
@@ -103,14 +103,14 @@ During deployment, four distinct issues were encountered and resolved:
 ### Issue 3: Immich Rejection of HTTP Issuer URL (`only requests to HTTPS are allowed`)
 * **Problem Statement:** Clicking *Login with Authentik* on Immich threw error: `Error in OAuth discovery: ClientError: only requests to HTTPS are allowed`.
 * **Investigation:** Evaluated Immich OAuth client security specification.
-* **Root Cause:** Plain HTTP URL (`http://192.168.110.225:9000/application/o/immich-photos/`) was specified as Issuer URL. Immich enforces HTTPS for OpenID Connect discovery.
+* **Root Cause:** Plain HTTP URL (`http://VLAN 110 (Services):9000/application/o/immich-photos/`) was specified as Issuer URL. Immich enforces HTTPS for OpenID Connect discovery.
 * **Correction:** Updated Issuer URL to public HTTPS endpoint: `https://auth.homelab-admin.me/application/o/immich-photos/`.
 
 ### Issue 4: Outdated Cloudflare Tunnel Target (`unexpected HTTP response status code`)
 * **Problem Statement:** After updating Issuer URL to HTTPS, Immich threw: `Error in OAuth discovery: ClientError: unexpected HTTP response status code`.
 * **Investigation:** Tested OpenID discovery endpoint (`https://auth.homelab-admin.me/application/o/immich-photos/.well-known/openid-configuration`).
-* **Root Cause:** The `auth.homelab-admin.me` route in Cloudflare Tunnel (`Bulakan-CF1`) was still pointing to legacy IP `http://192.168.1.210:80` (NPM) instead of the new Authentik instance. Cloudflare returned `502 Bad Gateway`.
-* **Correction:** Updated `auth.homelab-admin.me` Service URL in Cloudflare Tunnel dashboard to `http://192.168.110.225:9000`.
+* **Root Cause:** The `auth.homelab-admin.me` route in Cloudflare Tunnel (`Bulakan-CF1`) was still pointing to legacy IP `http://VLAN 1 [Management]:80` (NPM) instead of the new Authentik instance. Cloudflare returned `502 Bad Gateway`.
+* **Correction:** Updated `auth.homelab-admin.me` Service URL in Cloudflare Tunnel dashboard to `http://VLAN 110 (Services):9000`.
 
 ---
 

@@ -9,7 +9,7 @@
 ## 🛠️ Architecture & Configuration Summary
 
 ### 1. Storage & Media Path Mappings
-The Synology NAS (`//192.168.1.12/Seagate`) CIFS share is permanently mounted on Proxmox host Cebu and bind-mounted to CT 417:
+The Synology NAS (`//VLAN 1 [Management]/Seagate`) CIFS share is permanently mounted on Proxmox host Cebu and bind-mounted to CT 417:
 
 | Host Mount | Container Mount | Docker Path | Target Share | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
@@ -49,7 +49,7 @@ Gluetun (`qmcgaw/gluetun`) is configured with dedicated WireGuard credentials co
       - WIREGUARD_ENDPOINT_PORT=51820
       - DOT=off
       - DNS_PLAINTEXT_ADDRESS=1.1.1.1
-      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,192.168.110.0/24,192.168.120.0/24
+      - FIREWALL_OUTBOUND_SUBNETS=VLAN 1 (Management)/24,VLAN 110 (Services)/24,VLAN 120 (DMZ)/24
       - TZ=America/Los_Angeles
     restart: always
 

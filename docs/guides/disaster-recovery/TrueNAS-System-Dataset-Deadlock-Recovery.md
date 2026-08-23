@@ -8,7 +8,7 @@
 
 ## 1. Problem Statement
 
-During the final cutover of the photo storage migration from `DAS1-18TB` to `DAS2-18TB`, the Samba service (`smbd`) on TrueNAS SCALE (VM 120) crashed and refused to start. Attempts to mount the SMB share `//192.168.1.211/photo` on the Proxmox Cebu host (`192.168.1.26`) failed with:
+During the final cutover of the photo storage migration from `DAS1-18TB` to `DAS2-18TB`, the Samba service (`smbd`) on TrueNAS SCALE (VM 120) crashed and refused to start. Attempts to mount the SMB share `//VLAN 1 (Management)/photo` on the Proxmox Cebu host (`VLAN 1 [Management]`) failed with:
 
 ```text
 mount error: Server abruptly closed the connection.
@@ -80,7 +80,7 @@ mount /mnt/truenas-photo
 df -h /mnt/truenas-photo
 ```
 **Outcome**: Mounted successfully:
-`//192.168.1.211/photo   16T  9.4T  6.2T  61% /mnt/truenas-photo`
+`//VLAN 1 (Management)/photo   16T  9.4T  6.2T  61% /mnt/truenas-photo`
 
 ### Step 4: Start the Immich LXC Container
 We started Container 112 on Cebu:

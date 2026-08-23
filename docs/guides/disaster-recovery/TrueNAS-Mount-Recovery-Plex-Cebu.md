@@ -8,7 +8,7 @@
 
 ## 1. Problem Statement
 
-When attempting to play media from the Cebu Plex Media Server (LXC Container `109`, IP `192.168.1.215`), playback failed for files stored on the TrueNAS SCALE share. The client presented the following error:
+When attempting to play media from the Cebu Plex Media Server (LXC Container `109`, IP `VLAN 1 [Management]`), playback failed for files stored on the TrueNAS SCALE share. The client presented the following error:
 > Playback Error: Please check that the file exists and the necessary drive is mounted.
 
 ---
@@ -16,7 +16,7 @@ When attempting to play media from the Cebu Plex Media Server (LXC Container `10
 ## 2. Investigation & Root Cause Analysis
 
 ### Step 1: Check Plex Container Mount Configuration
-We logged into the Cebu Proxmox host (`192.168.1.26`) and reviewed the LXC container configuration for Plex (`109.conf`):
+We logged into the Cebu Proxmox host (`VLAN 1 [Management]`) and reviewed the LXC container configuration for Plex (`109.conf`):
 ```text
 mp0: /mnt/plex,mp=shared
 mp1: /mnt/plex1,mp=shared1
@@ -34,7 +34,7 @@ df -h | grep cebu-seagate
 ### Step 3: Identify Root Cause
 On **May 28, 2026**, the TrueNAS SCALE VM (`120`) experienced a crash and a subsequent QEMU virtual disk I/O pause due to ZFS pool degradation.
 Although the TrueNAS VM was successfully resumed and restarted:
-1. The CIFS/Samba mount on the Cebu Proxmox host (`//192.168.1.211/seagate/Share`) did not automatically remount once TrueNAS came back online.
+1. The CIFS/Samba mount on the Cebu Proxmox host (`//VLAN 1 (Management)/seagate/Share`) did not automatically remount once TrueNAS came back online.
 2. Other TrueNAS shares (e.g., `/mnt/truenas-photo` and `/mnt/truenas/seagate`) also remained unmounted.
 3. This left the Plex bind mount pointing to an empty host directory, leading to the playback failures.
 
@@ -43,13 +43,13 @@ Although the TrueNAS VM was successfully resumed and restarted:
 ## 3. Resolution Steps Taken
 
 ### Step 1: Mount the TrueNAS Share on Cebu Host
-We verified network connectivity to TrueNAS (`ping -c 3 192.168.1.211`) and mounted the directory manually to check for errors:
+We verified network connectivity to TrueNAS (`ping -c 3 VLAN 1 (Management)`) and mounted the directory manually to check for errors:
 ```bash
 mount -v /mnt/cebu-seagate
 ```
 **Outcome**: The mount succeeded. `df -h` verified the share was attached:
 ```text
-//192.168.1.211/seagate/Share     16T  6.1T  9.5T  40% /mnt/cebu-seagate
+//VLAN 1 (Management)/seagate/Share     16T  6.1T  9.5T  40% /mnt/cebu-seagate
 ```
 
 ### Step 2: Remount All Remaining Shares

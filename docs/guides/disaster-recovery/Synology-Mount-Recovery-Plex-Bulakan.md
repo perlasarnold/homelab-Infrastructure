@@ -8,7 +8,7 @@
 
 ## 1. Problem Statement
 
-After the Proxmox **Bulakan** server (`192.168.1.25`) was rebooted, the Plex Media Server, Jellyfin, and Audiobookshelf containers could not connect to their mounted drives. Synology storage (`PNAS` at `192.168.1.12`) was verified online and accessible from other hosts on the network.
+After the Proxmox **Bulakan** server (`VLAN 1 [Management]`) was rebooted, the Plex Media Server, Jellyfin, and Audiobookshelf containers could not connect to their mounted drives. Synology storage (`PNAS` at `VLAN 1 [Management]`) was verified online and accessible from other hosts on the network.
 
 ---
 
@@ -55,14 +55,14 @@ To ensure that future reboots do not experience this mount failure, we modified 
 
 #### Diff of `/etc/fstab`
 ```diff
-- //192.168.1.12/PlexMediaStorage /mnt/plex cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 0 0
-- //192.168.1.12/Seagate /mnt/plex1 cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 0 0
-- //192.168.1.12/photo /mnt/pnas_photos cifs username=homelab-admin,password=Jiggu1ot!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,noperm 0 0
-- //192.168.1.12/Media/Audiobooks /mnt/audiobooks cifs username=homelab-admin,password=Jiggu1ot!@#,iocharset=utf8,vers=3.0,noperm 0 0
-+ //192.168.1.12/PlexMediaStorage /mnt/plex cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,_netdev,nofail,x-systemd.automount 0 0
-+ //192.168.1.12/Seagate /mnt/plex1 cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,_netdev,nofail,x-systemd.automount 0 0
-+ //192.168.1.12/photo /mnt/pnas_photos cifs username=homelab-admin,password=Jiggu1ot!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,noperm,_netdev,nofail,x-systemd.automount 0 0
-+ //192.168.1.12/Media/Audiobooks /mnt/audiobooks cifs username=homelab-admin,password=Jiggu1ot!@#,iocharset=utf8,vers=3.0,noperm,_netdev,nofail,x-systemd.automount 0 0
+- //VLAN 1 [Management]/PlexMediaStorage /mnt/plex cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 0 0
+- //VLAN 1 [Management]/Seagate /mnt/plex1 cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777 0 0
+- //VLAN 1 [Management]/photo /mnt/pnas_photos cifs username=homelab-admin,password=Jiggu1ot!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,noperm 0 0
+- //VLAN 1 [Management]/Media/Audiobooks /mnt/audiobooks cifs username=homelab-admin,password=Jiggu1ot!@#,iocharset=utf8,vers=3.0,noperm 0 0
++ //VLAN 1 [Management]/PlexMediaStorage /mnt/plex cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,_netdev,nofail,x-systemd.automount 0 0
++ //VLAN 1 [Management]/Seagate /mnt/plex1 cifs username=Plex,password=Media2023!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,_netdev,nofail,x-systemd.automount 0 0
++ //VLAN 1 [Management]/photo /mnt/pnas_photos cifs username=homelab-admin,password=Jiggu1ot!@#,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,noperm,_netdev,nofail,x-systemd.automount 0 0
++ //VLAN 1 [Management]/Media/Audiobooks /mnt/audiobooks cifs username=homelab-admin,password=Jiggu1ot!@#,iocharset=utf8,vers=3.0,noperm,_netdev,nofail,x-systemd.automount 0 0
 ```
 
 * Rationale:

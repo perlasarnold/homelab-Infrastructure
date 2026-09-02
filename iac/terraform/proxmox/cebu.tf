@@ -1,5 +1,5 @@
 ###############################################################################
-# Cebu Node Resources (VLAN 1 [Management])
+# Cebu Node Resources (192.168.1.26)
 # VLAN & Subnet Segmented Deployment
 # Architecture: Management (VLAN 10), Services (VLAN 110), DMZ (VLAN 120)
 ###############################################################################
@@ -20,8 +20,8 @@ module "cloudflared_cebu" {
   cores        = 1
   disk_size    = 8
   vlan_id      = 120
-  ipv4_address = "VLAN 120 (DMZ)/24"
-  gateway      = "VLAN 120 (DMZ)"
+  ipv4_address = "192.168.120.7/24"
+  gateway      = "192.168.120.1"
 }
 
 # ---------------------------------------------------------------------------
@@ -40,8 +40,8 @@ module "npm_cebu" {
   cores        = 2
   disk_size    = 16
   vlan_id      = 120
-  ipv4_address = "VLAN 120 (DMZ)/24"
-  gateway      = "VLAN 120 (DMZ)"
+  ipv4_address = "192.168.120.210/24"
+  gateway      = "192.168.120.1"
 }
 
 # ---------------------------------------------------------------------------
@@ -132,3 +132,90 @@ module "arr_stack_cebu" {
     }
   ]
 }
+
+# ---------------------------------------------------------------------------
+# Security — fail2ban-cebu (CT 406) + fail2ban-dashboard
+# ---------------------------------------------------------------------------
+module "fail2ban_cebu" {
+  source       = "./modules/lxc"
+  node_name    = var.cebu_node
+  vm_id        = 406
+  hostname     = "fail2ban-cebu"
+  description  = "fail2ban IPS + dashboard — SSH, NPM, Authentik & Wazuh log monitoring"
+  tags         = ["security", "secops", "fail2ban"]
+  template_id  = var.cebu_lxc_template
+  datastore_id = var.cebu_datastore
+  memory       = 512
+  cores        = 1
+  disk_size    = 4
+  vlan_id      = 10
+  ipv4_address = "192.168.10.50/24"
+  gateway      = "192.168.10.1"
+  unprivileged = true
+}
+
+# ---------------------------------------------------------------------------
+# Networking — tailscale-cebu (CT 407)
+# ---------------------------------------------------------------------------
+module "tailscale_cebu" {
+  source       = "./modules/lxc"
+  node_name    = var.cebu_node
+  vm_id        = 407
+  hostname     = "tailscale-cebu"
+  description  = "Tailscale subnet router + exit node — OAuth client, all homelab subnets"
+  tags         = ["networking", "vpn", "tailscale"]
+  template_id  = var.cebu_lxc_template
+  datastore_id = var.cebu_datastore
+  memory       = 512
+  cores        = 1
+  disk_size    = 4
+  vlan_id      = 1
+  ipv4_address = "192.168.1.246/24"
+  gateway      = "192.168.1.1"
+  unprivileged = true
+  nesting      = true
+}
+
+# ---------------------------------------------------------------------------
+# Observability — grafana-cebu (CT 418)
+# ---------------------------------------------------------------------------
+module "grafana_cebu" {
+  source       = "./modules/lxc"
+  node_name    = var.cebu_node
+  vm_id        = 418
+  hostname     = "grafana-cebu"
+  description  = "Grafana observability dashboard — grafana.perlasarnold.me"
+  tags         = ["monitoring", "observability", "services"]
+  template_id  = var.cebu_lxc_template
+  datastore_id = var.cebu_datastore
+  memory       = 2048
+  cores        = 2
+  disk_size    = 16
+  vlan_id      = 110
+  ipv4_address = "192.168.110.60/24"
+  gateway      = "192.168.110.1"
+  unprivileged = true
+}
+
+# ---------------------------------------------------------------------------
+# Observability — uptime-kuma-cebu (CT 419)
+# ---------------------------------------------------------------------------
+module "uptime_kuma_cebu" {
+  source       = "./modules/lxc"
+  node_name    = var.cebu_node
+  vm_id        = 419
+  hostname     = "uptime-kuma-cebu"
+  description  = "Uptime Kuma service monitor (Docker) — kuma.perlasarnold.me"
+  tags         = ["monitoring", "uptime", "services"]
+  template_id  = var.cebu_lxc_template
+  datastore_id = var.cebu_datastore
+  memory       = 1024
+  cores        = 1
+  disk_size    = 10
+  vlan_id      = 110
+  ipv4_address = "192.168.110.61/24"
+  gateway      = "192.168.110.1"
+  unprivileged = true
+  nesting      = true
+}
+

@@ -1,0 +1,35 @@
+﻿---
+- name: Check CT {{ uptime_kuma_ct_id }} status
+  shell: pct status {{ uptime_kuma_ct_id }} | grep -q running
+  register: ct_status
+  failed_when: false
+  changed_when: false
+
+- name: Fail if CT {{ uptime_kuma_ct_id }} is not running
+  fail:
+    msg: "CT {{ uptime_kuma_ct_id }} is not running. Please provision via Terraform first."
+  when: ct_status.rc != 0
+
+- name: Update OS packages inside CT {{ uptime_kuma_ct_id }}
+  shell: pct exec {{ uptime_kuma_ct_id }} -- bash -c 'apt update && apt upgrade -y'
+
+- name: Install Docker & dependencies in CT {{ uptime_kuma_ct_id }}
+  shell: |
+    pct exec {{ uptime_kuma_ct_id }} -- bash -c '
+      DEBIAN_FRONTEND=noninteractive apt install -y curl ca-certificates gnupg
+      if ! command -v docker &>/dev/null; then
+        curl -fsSL https://get.docker.com | sh
+      fi
+      systemctl enable --now docker
+    '
+
+- name: Deploy Uptime Kuma Container via Docker inside CT {{ uptime_kuma_ct_id }}
+  shell: |
+    pct exec {{ uptime_kuma_ct_id }} -- bash -c '
+      mkdir -p {{ uptime_kuma_docker_data_dir }}
+      if ! docker ps -a | grep -q uptime-kuma; then
+        docker run -d --restart=always -p {{ uptime_kuma_port }}:3001 -v {{ uptime_kuma_docker_data_dir }}:/app/data --name uptime-kuma louislam/uptime-kuma:1
+      else
+        docker start uptime-kuma || true
+      fi
+    '

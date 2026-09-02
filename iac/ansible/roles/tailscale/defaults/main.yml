@@ -1,0 +1,9 @@
+﻿---
+tailscale_ct_id: 407
+tailscale_advertise_routes:
+  - "192.168.1.0/24"
+  - "192.168.10.0/24"
+  - "192.168.110.0/24"
+  - "192.168.120.0/24"
+tailscale_exit_node: true
+tailscale_accept_dns: false

@@ -1,0 +1,51 @@
+﻿---
+# Cebu Service Variables
+# SECRETS: tailscale_auth_key/oauth secrets and grafana_oauth_secret must be passed
+#          via ansible-vault or --extra-vars. Never commit plain-text.
+
+# CT IDs
+fail2ban_ct_id: 406
+tailscale_ct_id: 407
+grafana_ct_id: 418
+uptime_kuma_ct_id: 419
+npm_ct_id: 105         # For Tier-1 fail2ban install inside NPM
+
+# DNS / Pi-hole CTs
+pihole_bulakan_ct_id: 301
+pihole_cebu_ct_id: 401
+npm_ip: "192.168.120.211"
+
+# fail2ban
+fail2ban_ban_time: 3600       # 1 hour
+fail2ban_find_time: 600       # 10 min window
+fail2ban_max_retry: 5
+fail2ban_npm_log_path: /data/logs/
+fail2ban_wazuh_ports: [1514, 1515]
+fail2ban_dashboard_port: 8705
+
+# Tailscale
+tailscale_version: latest
+tailscale_advertise_routes:
+  - "192.168.1.0/24"
+  - "192.168.10.0/24"
+  - "192.168.110.0/24"
+  - "192.168.120.0/24"
+tailscale_exit_node: true
+tailscale_accept_dns: false
+# tailscale_oauth_client_id: "..."     # pass via --extra-vars or vault
+# tailscale_oauth_client_secret: "..." # pass via --extra-vars or vault
+
+# Grafana
+grafana_version: "stable"
+grafana_port: 3000
+grafana_admin_user: admin
+grafana_domain: grafana.perlasarnold.me
+grafana_authentik_url: https://auth.perlasarnold.me
+grafana_oauth_client_id: grafana
+# grafana_oauth_client_secret: "..."  # pass via --extra-vars or vault
+grafana_disable_local_login: true
+
+# Uptime Kuma
+uptime_kuma_version: latest
+uptime_kuma_port: 3001
+uptime_kuma_docker_data_dir: /opt/uptime-kuma/data

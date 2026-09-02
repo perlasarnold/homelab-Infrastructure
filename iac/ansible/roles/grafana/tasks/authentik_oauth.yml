@@ -1,0 +1,37 @@
+﻿---
+- name: Deploy grafana.ini with Authentik Generic OAuth configuration
+  shell: |
+    pct exec {{ grafana_ct_id }} -- bash -c 'cat << "EOF" > /etc/grafana/grafana.ini
+[server]
+http_addr = 0.0.0.0
+http_port = {{ grafana_port }}
+domain = {{ grafana_domain }}
+root_url = https://{{ grafana_domain }}/
+
+[security]
+allow_embedding = false
+cookie_secure = true
+
+[users]
+allow_sign_up = false
+auto_assign_org = true
+auto_assign_org_role = Viewer
+
+[auth]
+disable_login_form = {{ grafana_disable_local_login | lower }}
+
+[auth.generic_oauth]
+enabled = true
+name = Authentik
+client_id = {{ grafana_oauth_client_id }}
+client_secret = {{ grafana_oauth_client_secret | default("CHANGE_ME_IN_VAULT") }}
+scopes = openid email profile
+auth_url = {{ grafana_authentik_url }}/application/o/authorize/
+token_url = {{ grafana_authentik_url }}/application/o/token/
+api_url = {{ grafana_authentik_url }}/application/o/userinfo/
+allow_sign_up = true
+auto_login = false
+role_attribute_path = contains(groups[*], '\''Grafana Admins'\'') && '\''Admin'\'' || contains(groups[*], '\''Grafana Editors'\'') && '\''Editor'\'' || '\''Viewer'\''
+EOF
+    systemctl restart grafana-server
+    '

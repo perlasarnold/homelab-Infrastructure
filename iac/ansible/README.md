@@ -1,5 +1,5 @@
 # Proxmox VE & LXC/VM Sequential Update System
-Core Homelab automated sequential update solution using Ansible
+Mercado Homelab automated sequential update solution using Ansible
 
 ## Overview
 A production-grade, cluster-aware update system for Proxmox VE (PVE) nodes and their virtualized guest workloads (LXCs and VMs).
@@ -15,6 +15,7 @@ This system executes **sequentially (`serial: 1`)** across your cluster nodes to
 - 📸 **Pre-Update Guest Snapshots**: Takes automated snapshots (`pct snapshot` / `qm snapshot`) before updating guests.
 - ⏪ **Automated Guest Rollback**: Automatically rolls back container state if update commands or health checks fail.
 - ⛔ **Configurable Exclusion Lists**: Prevents updating critical services (e.g., DNS, Firewalls, Storage).
+- ⚙️ **Dedicated Service Updates**: Automatically runs `cebu_services.yml` post-cluster update to manage fail2ban, Tailscale, Grafana, and Uptime Kuma without generic rollback risks.
 - 🏷️ **Repository Management**: Handles enterprise vs. no-subscription repository switching automatically.
 - 🪵 **Centralized Audit Logging**: Logs all actions to `/var/log/proxmox-updates.log` and `/var/log/proxmox-cron-updates.log`.
 
@@ -70,10 +71,10 @@ cd /root/homelab/ansible
 ### 2. Trigger from Windows via PowerShell
 ```powershell
 # From Windows terminal:
-.\run_update.ps1 -ProxmoxHost "VLAN 1 [Management]"
+.\run_update.ps1 -ProxmoxHost "192.168.1.25"
 
 # With automatic host reboot:
-.\run_update.ps1 -ProxmoxHost "VLAN 1 [Management]" -AutoReboot
+.\run_update.ps1 -ProxmoxHost "192.168.1.25" -AutoReboot
 ```
 
 ---

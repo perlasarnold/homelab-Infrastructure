@@ -28,6 +28,10 @@ Step-by-step guides for common homelab tasks. Written for beginners.
 - [[Transmission-VPN-Proxmox-Setup]] — Deploying Transmission with Surfshark VPN (Gluetun) and Synology SMB storage
 - [[Calibre-Web-Synology-Ebooks-Mount-Bulakan]] — Mounting the Synology Ebooks library into Calibre-Web LXC 113
 - [[Cebu-Surfshark-Region-Change]] — Guide for changing Surfshark VPN regions on Cebu
+- [[Transmission-to-qBittorrent-Gluetun-Migration-2026-08-31]] — Migrating download client from Transmission to standalone qBittorrent in a Gluetun WireGuard VPN sidecar, resolving killswitch hairpin routing drops and automating download stall recovery
+- [[Arr-Stack-Extension-Blocklist-and-Malware-Prevention-Guide-2026-08-31]] — Pre-grab release filtering in Sonarr and Radarr to block fake `.exe` executables, scripts, and non-media archives
+- [[Cebu-IP-Conflict-Resolution-CT416-CT417-2026-08-31]] — Diagnosing and resolving the VLAN 110 IP address collision between CT 416 and CT 417 that caused Homepage API error badges
+- [[Sonarr-Prowlarr-TorrentLeech-VPN-Troubleshooting-2026-08-25]] — Resolving Sonarr indexer timeouts, switching Surfshark WireGuard region to Brazil, disabling dual-stack IPv6 socket hangs, and adding TorrentLeech
 - [[Cebu-Arr-Stack-Setup]] — Deploying an Arr Stack (Sonarr, Radarr, etc.) in a Debian LXC via Docker Compose
 - [[Master-Arr-Stack-Sonarr-NPM-WireGuard-Setup-Guide-2026-08-22]] — Master setup guide for Sonarr, NPM wildcard SSL reverse proxy, Synology NAS media storage, and Surfshark WireGuard killswitch
 - [[Arr-Stack-Surfshark-WireGuard-Storage-Guide-2026-08-22]] — Configuring Gluetun with dedicated Surfshark WireGuard credentials, Transmission killswitch, and NAS storage mappings

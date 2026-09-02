@@ -1,0 +1,26 @@
+﻿---
+- name: Deploy jail.local configuration to CT {{ fail2ban_ct_id }}
+  shell: |
+    pct exec {{ fail2ban_ct_id }} -- bash -c 'cat << "EOF" > /etc/fail2ban/jail.local
+[DEFAULT]
+bantime  = {{ fail2ban_ban_time }}
+findtime = {{ fail2ban_find_time }}
+maxretry = {{ fail2ban_max_retry }}
+banaction = iptables-multiport
+
+[sshd]
+enabled = true
+port    = ssh
+logpath = %(sshd_log)s
+backend = %(default_backend)s
+
+[wazuh-agent]
+enabled  = true
+port     = 1514,1515
+protocol = tcp
+filter   = wazuh-agent
+logpath  = /var/log/messages
+maxretry = 3
+EOF
+    systemctl restart fail2ban
+    '

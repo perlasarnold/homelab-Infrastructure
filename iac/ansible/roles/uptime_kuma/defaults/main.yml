@@ -1,0 +1,4 @@
+﻿---
+uptime_kuma_ct_id: 419
+uptime_kuma_port: 3001
+uptime_kuma_docker_data_dir: /opt/uptime-kuma/data

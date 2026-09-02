@@ -1,0 +1,60 @@
+﻿---
+- name: Check CT {{ tailscale_ct_id }} status
+  shell: pct status {{ tailscale_ct_id }} | grep -q running
+  register: ct_status
+  failed_when: false
+  changed_when: false
+
+- name: Fail if CT {{ tailscale_ct_id }} is not running
+  fail:
+    msg: "CT {{ tailscale_ct_id }} is not running. Please provision via Terraform first."
+  when: ct_status.rc != 0
+
+- name: Configure sysctl and IP forwarding on Host & CT
+  include_tasks: sysctl.yml
+
+- name: Update OS packages inside CT {{ tailscale_ct_id }}
+  shell: pct exec {{ tailscale_ct_id }} -- bash -c 'apt update && apt upgrade -y'
+
+- name: Install curl, iptables, ca-certificates inside CT {{ tailscale_ct_id }}
+  shell: pct exec {{ tailscale_ct_id }} -- bash -c 'DEBIAN_FRONTEND=noninteractive apt install -y curl iptables ca-certificates gnupg'
+
+- name: Install Tailscale repository & package inside CT {{ tailscale_ct_id }}
+  shell: |
+    pct exec {{ tailscale_ct_id }} -- bash -c '
+      if ! command -v tailscale &>/dev/null; then
+        curl -fsSL https://tailscale.com/install.sh | sh
+      fi
+      systemctl enable --now tailscaled
+    '
+
+- name: Check Tailscale login status
+  shell: pct exec {{ tailscale_ct_id }} -- tailscale status
+  register: ts_status
+  failed_when: false
+  changed_when: false
+
+- name: Construct advertised routes string
+  set_fact:
+    routes_str: "{{ tailscale_advertise_routes | join(',') }}"
+
+- name: Authenticate with Tailscale OAuth Client if provided
+  when: 
+    - tailscale_oauth_client_id is defined
+    - tailscale_oauth_client_secret is defined
+    - "'Logged out' in ts_status.stdout or ts_status.rc != 0"
+  shell: |
+    pct exec {{ tailscale_ct_id }} -- tailscale up \
+      --auth-key="client-secret:{{ tailscale_oauth_client_secret }}" \
+      --advertise-routes="{{ routes_str }}" \
+      {% if tailscale_exit_node %}--advertise-exit-node{% endif %} \
+      --accept-dns={{ tailscale_accept_dns | lower }} \
+      --reset
+
+- name: Update Tailscale routing flags if already authenticated
+  when: "'Logged out' not in ts_status.stdout and ts_status.rc == 0"
+  shell: |
+    pct exec {{ tailscale_ct_id }} -- tailscale up \
+      --advertise-routes="{{ routes_str }}" \
+      {% if tailscale_exit_node %}--advertise-exit-node{% endif %} \
+      --accept-dns={{ tailscale_accept_dns | lower }}

@@ -1,0 +1,48 @@
+﻿---
+# Cebu Service Provisioning & Management Playbook
+# Provisions & Manages fail2ban, Tailscale, Grafana, Uptime Kuma on Cebu PVE
+# Usage: ansible-playbook cebu_services.yml
+# Single service: ansible-playbook cebu_services.yml --tags grafana
+
+- name: Provision & Manage Cebu Services
+  hosts: cebu
+  gather_facts: true
+  become: true
+
+  vars_files:
+    - vars/proxmox_update.yml
+    - vars/cebu_services.yml
+
+  roles:
+    - role: fail2ban
+      tags: [fail2ban, security]
+    - role: tailscale
+      tags: [tailscale, vpn]
+    - role: grafana
+      tags: [grafana, observability]
+    - role: uptime_kuma
+      tags: [uptime_kuma, kuma, monitoring]
+
+  post_tasks:
+    - name: Configure Split-Horizon DNS records on Pi-hole CTs
+      block:
+        - name: Ensure DNS records exist in Pi-hole custom.list on Cebu (CT 401)
+          shell: |
+            pct exec {{ pihole_cebu_ct_id }} -- bash -c '
+              grep -q "grafana.perlasarnold.me" /etc/pihole/custom.list || echo "{{ npm_ip }} grafana.perlasarnold.me" >> /etc/pihole/custom.list
+              grep -q "kuma.perlasarnold.me" /etc/pihole/custom.list || echo "{{ npm_ip }} kuma.perlasarnold.me" >> /etc/pihole/custom.list
+              grep -q "fail2ban.perlasarnold.me" /etc/pihole/custom.list || echo "{{ npm_ip }} fail2ban.perlasarnold.me" >> /etc/pihole/custom.list
+              pihole restartdns
+            '
+          ignore_errors: true
+
+        - name: Ensure DNS records exist in Pi-hole custom.list on Bulakan (CT 301)
+          shell: |
+            ssh -o StrictHostKeyChecking=no root@192.168.1.25 "pct exec {{ pihole_bulakan_ct_id }} -- bash -c '
+              grep -q \"grafana.perlasarnold.me\" /etc/pihole/custom.list || echo \"{{ npm_ip }} grafana.perlasarnold.me\" >> /etc/pihole/custom.list
+              grep -q \"kuma.perlasarnold.me\" /etc/pihole/custom.list || echo \"{{ npm_ip }} kuma.perlasarnold.me\" >> /etc/pihole/custom.list
+              grep -q \"fail2ban.perlasarnold.me\" /etc/pihole/custom.list || echo \"{{ npm_ip }} fail2ban.perlasarnold.me\" >> /etc/pihole/custom.list
+              pihole restartdns
+            '"
+          ignore_errors: true
+      tags: [dns, pihole]

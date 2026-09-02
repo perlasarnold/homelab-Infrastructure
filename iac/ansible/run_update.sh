@@ -56,6 +56,20 @@ if [ $EXIT_CODE -eq 0 ]; then
   echo " SUCCESS: All Proxmox nodes and workloads updated."
   echo " Log location on PVE node: /var/log/proxmox-updates.log"
   echo "============================================================"
+
+  # Execute Cebu dedicated service updates (fail2ban, Tailscale, Grafana, Uptime Kuma)
+  if [ -z "$TAGS_ARG" ] || [ "$TAGS_ARG" = "--tags lxc" ]; then
+    echo "============================================================"
+    echo " Starting Cebu Managed Services Update (cebu_services.yml)"
+    echo "============================================================"
+    ansible-playbook -i inventory/proxmox.ini cebu_services.yml $CHECK_MODE
+    CEBU_SERVICES_EXIT=$?
+    if [ $CEBU_SERVICES_EXIT -ne 0 ]; then
+      echo " WARNING: Cebu services update encountered errors (exit code: $CEBU_SERVICES_EXIT)"
+    else
+      echo " SUCCESS: Cebu services updated and verified."
+    fi
+  fi
 else
   echo "============================================================"
   echo " ERROR: Update failed on step with exit code $EXIT_CODE."
@@ -64,3 +78,4 @@ else
 fi
 
 exit $EXIT_CODE
+

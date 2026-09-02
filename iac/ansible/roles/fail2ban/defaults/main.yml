@@ -1,0 +1,7 @@
+﻿---
+fail2ban_ct_id: 406
+npm_ct_id: 105
+fail2ban_ban_time: 3600
+fail2ban_find_time: 600
+fail2ban_max_retry: 5
+fail2ban_dashboard_port: 8705

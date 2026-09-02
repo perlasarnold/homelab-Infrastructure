@@ -1,0 +1,7 @@
+﻿---
+grafana_ct_id: 418
+grafana_port: 3000
+grafana_domain: grafana.perlasarnold.me
+grafana_authentik_url: https://auth.perlasarnold.me
+grafana_oauth_client_id: grafana
+grafana_disable_local_login: true

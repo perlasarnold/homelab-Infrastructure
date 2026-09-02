@@ -1,0 +1,45 @@
+﻿---
+- name: Check NPM CT {{ npm_ct_id }} status
+  shell: pct status {{ npm_ct_id }} | grep -q running
+  register: npm_status
+  failed_when: false
+  changed_when: false
+
+- name: Install and configure fail2ban inside NPM CT {{ npm_ct_id }}
+  when: npm_status.rc == 0
+  shell: |
+    pct exec {{ npm_ct_id }} -- bash -c '
+      apt update && DEBIAN_FRONTEND=noninteractive apt install -y fail2ban iptables
+      cat << "EOF" > /etc/fail2ban/jail.local
+[DEFAULT]
+bantime  = 3600
+findtime = 600
+maxretry = 5
+banaction = iptables-multiport
+
+[nginx-4xx]
+enabled  = true
+port     = http,https
+filter   = nginx-4xx
+logpath  = /data/logs/default-host_error.log
+maxretry = 10
+
+[authentik-auth]
+enabled  = true
+port     = http,https
+filter   = authentik-auth
+logpath  = /data/logs/proxy-host-*.log
+maxretry = 5
+EOF
+      cat << "EOF" > /etc/fail2ban/filter.d/nginx-4xx.conf
+[Definition]
+failregex = ^<HOST> - .* "(GET|POST|HEAD).*" (400|401|403|404|444) .*$
+ignoreregex =
+EOF
+      cat << "EOF" > /etc/fail2ban/filter.d/authentik-auth.conf
+[Definition]
+failregex = ^<HOST> - .* "(GET|POST).*/api/v3/auth/.*" (401|403) .*$
+ignoreregex =
+EOF
+      systemctl restart fail2ban
+    '

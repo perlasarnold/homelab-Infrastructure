@@ -1,0 +1,58 @@
+﻿---
+- name: Check CT {{ grafana_ct_id }} status
+  shell: pct status {{ grafana_ct_id }} | grep -q running
+  register: ct_status
+  failed_when: false
+  changed_when: false
+
+- name: Fail if CT {{ grafana_ct_id }} is not running
+  fail:
+    msg: "CT {{ grafana_ct_id }} is not running. Please provision via Terraform first."
+  when: ct_status.rc != 0
+
+- name: Update OS packages inside CT {{ grafana_ct_id }}
+  shell: pct exec {{ grafana_ct_id }} -- bash -c 'apt update && apt upgrade -y'
+
+- name: Install dependencies & official Grafana repository in CT {{ grafana_ct_id }}
+  shell: |
+    pct exec {{ grafana_ct_id }} -- bash -c '
+      DEBIAN_FRONTEND=noninteractive apt install -y apt-transport-https software-properties-common wget gpg curl
+      mkdir -p /etc/apt/keyrings/
+      wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | tee /etc/apt/keyrings/grafana.gpg > /dev/null
+      echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list
+      apt update
+      DEBIAN_FRONTEND=noninteractive apt install -y grafana
+      systemctl enable grafana-server
+    '
+
+- name: Configure Grafana Authentik OAuth & Security
+  include_tasks: authentik_oauth.yml
+
+- name: Provision Datasources in CT {{ grafana_ct_id }}
+  shell: |
+    pct exec {{ grafana_ct_id }} -- bash -c '
+      mkdir -p /etc/grafana/provisioning/datasources
+      cat << "EOF" > /etc/grafana/provisioning/datasources/wazuh.yaml
+apiVersion: 1
+datasources:
+  - name: Wazuh API
+    type: grafana-simple-json-datasource
+    access: proxy
+    url: https://192.168.10.250:55000
+    isDefault: false
+    editable: true
+    jsonData:
+      tlsSkipVerify: true
+EOF
+
+      cat << "EOF" > /etc/grafana/provisioning/datasources/infinity.yaml
+apiVersion: 1
+datasources:
+  - name: Infinity (Uptime Kuma)
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    isDefault: false
+    editable: true
+EOF
+      systemctl restart grafana-server
+    '

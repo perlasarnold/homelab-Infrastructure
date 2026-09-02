@@ -1,0 +1,32 @@
+﻿---
+- name: Check CT {{ fail2ban_ct_id }} status
+  shell: pct status {{ fail2ban_ct_id }} | grep -q running
+  register: ct_status
+  failed_when: false
+  changed_when: false
+
+- name: Fail if CT {{ fail2ban_ct_id }} is not running
+  fail:
+    msg: "CT {{ fail2ban_ct_id }} is not running. Please provision via Terraform first."
+  when: ct_status.rc != 0
+
+- name: Update OS packages inside CT {{ fail2ban_ct_id }}
+  shell: pct exec {{ fail2ban_ct_id }} -- bash -c 'apt update && apt upgrade -y'
+
+- name: Install fail2ban, iptables, python3, git, curl inside CT {{ fail2ban_ct_id }}
+  shell: pct exec {{ fail2ban_ct_id }} -- bash -c 'DEBIAN_FRONTEND=noninteractive apt install -y fail2ban iptables python3 python3-pip git curl'
+
+- name: Configure fail2ban jails in CT {{ fail2ban_ct_id }}
+  include_tasks: jails.yml
+
+- name: Configure Tier-1 fail2ban inside NPM CT {{ npm_ct_id }}
+  include_tasks: npm_tier1.yml
+
+- name: Install fail2ban-dashboard in CT {{ fail2ban_ct_id }}
+  shell: |
+    pct exec {{ fail2ban_ct_id }} -- bash -c '
+      if [ ! -d "/opt/fail2ban-dashboard" ]; then
+        git clone https://github.com/mizdra/fail2ban-dashboard /opt/fail2ban-dashboard || true
+      fi
+    '
+  ignore_errors: true

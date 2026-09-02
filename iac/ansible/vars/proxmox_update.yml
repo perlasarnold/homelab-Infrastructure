@@ -1,5 +1,5 @@
 ---
-# Proxmox Sequential Update Configuration - Core Homelab
+# Proxmox Sequential Update Configuration - Mercado Homelab
 
 # Global logging & timeout settings
 proxmox_update_log_path: "/var/log/proxmox-updates.log"
@@ -22,6 +22,11 @@ proxmox_exclude_lxc:
   - 101  # Pi-hole Secondary
   - 102  # WireGuard VPN
   - 103  # Cloudflare Tunnel
+  # --- New Cebu services (managed by dedicated Ansible roles, not auto-update) ---
+  - 406  # fail2ban-cebu       (service role manages updates)
+  - 407  # tailscale-cebu      (service role manages updates — OAuth client auth)
+  - 418  # grafana-cebu        (service role manages version pinning)
+  - 419  # uptime-kuma-cebu    (service role manages Docker container)
 
 proxmox_exclude_vms:
   - 200  # OPNsense Firewall

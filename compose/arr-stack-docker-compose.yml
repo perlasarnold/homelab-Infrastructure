@@ -1,47 +1,87 @@
 services:
-  jackett:
-    image: lscr.io/linuxserver/jackett:latest
-    container_name: jackett
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "9117:9117" # Jackett
+      - "9696:9696" # Prowlarr
+      - "9091:9091" # Transmission Web UI
+      - "51413:51413"
+      - "51413:51413/udp"
+    environment:
+      - VPN_SERVICE_PROVIDER=surfshark
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=MPMBBrRuYqWCjKkRQEPnhBqz
+      - OPENVPN_PASSWORD=3fRE9WrvLNt5HPt2Q5meyWha
+      - SERVER_COUNTRIES=United States
+      - SERVER_CITIES=Los Angeles
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,192.168.110.0/24,192.168.120.0/24
+      - TZ=America/Los_Angeles
+    restart: always
+
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    network_mode: "service:gluetun"
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
-      - DOTNET_SYSTEM_NET_DISABLEIPV6=1
+    volumes:
+      - ./config/transmission:/config
+      - ./data/downloads:/downloads
+      - ./data/watch:/watch
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: unless-stopped
+
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
     volumes:
       - ./config/jackett:/config
       - /mnt/ebooks:/ebooks
-    ports:
-      - "9117:9117"
+      - /mnt/audiobooks:/audiobooks
+    depends_on:
+      gluetun:
+        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - default
-      - downloads_net
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
+    network_mode: "service:gluetun"
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
-      - DOTNET_SYSTEM_NET_DISABLEIPV6=1
     volumes:
       - ./config/prowlarr:/config
-    ports:
-      - "9696:9696"
+    depends_on:
+      gluetun:
+        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - default
-      - downloads_net
 
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
+    network_mode: "service:gluetun"
     environment:
       - LOG_LEVEL=info
       - TZ=America/Los_Angeles
-    ports:
-      - "8191:8191"
+    depends_on:
+      gluetun:
+        condition: service_healthy
     restart: unless-stopped
 
   bindery:
@@ -50,17 +90,17 @@ services:
     environment:
       - TZ=America/Los_Angeles
       - BINDERY_LIBRARY_DIR=/books
+      - BINDERY_AUDIOBOOK_DIR=/audiobooks
       - BINDERY_DOWNLOAD_DIR=/downloads
+      - BINDERY_AUDIOBOOK_DOWNLOAD_DIR=/downloads/complete
     volumes:
       - ./config/bindery:/config
       - /mnt/ebooks:/books
-      - /mnt/seagate/Downloads:/downloads
+      - /mnt/audiobooks:/audiobooks
+      - ./data/downloads:/downloads
     ports:
       - "8787:8787"
     restart: unless-stopped
-    networks:
-      - default
-      - downloads_net
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -69,17 +109,13 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
-      - DOTNET_SYSTEM_NET_DISABLEIPV6=1
     volumes:
       - ./config/sonarr:/config
-      - /mnt/seagate/TV Shows:/tv
-      - /mnt/seagate/Downloads:/downloads
+      - ./data/media:/data/media
+      - ./data/downloads:/downloads
     ports:
       - "8989:8989"
     restart: unless-stopped
-    networks:
-      - default
-      - downloads_net
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -88,17 +124,13 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
-      - DOTNET_SYSTEM_NET_DISABLEIPV6=1
     volumes:
       - ./config/radarr:/config
-      - /mnt/seagate/Movies:/movies
-      - /mnt/seagate/Downloads:/downloads
+      - ./data/media:/data/media
+      - ./data/downloads:/downloads
     ports:
       - "7878:7878"
     restart: unless-stopped
-    networks:
-      - default
-      - downloads_net
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -109,8 +141,7 @@ services:
       - TZ=America/Los_Angeles
     volumes:
       - ./config/bazarr:/config
-      - /mnt/seagate/TV Shows:/tv
-      - /mnt/seagate/Movies:/movies
+      - ./data/media:/data/media
     ports:
       - "6767:6767"
     restart: unless-stopped
@@ -125,9 +156,3 @@ services:
     ports:
       - "5690:5690"
     restart: unless-stopped
-
-networks:
-  default:
-    name: arr-stack_default
-  downloads_net:
-    external: true

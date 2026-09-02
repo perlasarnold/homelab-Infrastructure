@@ -2,32 +2,52 @@
 - Security & Access Control:
     - Authentik SSO:
         icon: authentik.png
-        href: https://auth.homelab-admin.me
+        href: https://auth.perlasarnold.me
         description: Identity Provider & Single Sign-On
 
     - Wazuh SIEM:
         icon: wazuh.png
-        href: https://wazuh.homelab-admin.me
+        href: https://wazuh.perlasarnold.me
         description: Security Information & Event Monitoring (Cebu VM 250)
 
     - Apache Guacamole:
         icon: guacamole.png
-        href: https://guacamole.homelab-admin.me
+        href: https://guacamole.perlasarnold.me
         description: HTML5 Remote Desktop Portal (Dapitan CT 114)
 
     - Nginx Proxy Manager:
         icon: nginx-proxy-manager.png
-        href: http://VLAN 120 (DMZ):81
+        href: http://192.168.120.211:81
         description: Reverse Proxy & Wildcard SSL Management (Cebu CT 105)
+
+    - Tailscale VPN:
+        icon: tailscale.png
+        href: https://login.tailscale.com/admin
+        description: Mesh VPN — Subnet Router & Exit Node (Cebu CT 407)
+
+    - Grafana:
+        icon: grafana.png
+        href: https://grafana.perlasarnold.me
+        description: Observability & Metrics Dashboard — Authentik SSO (Cebu CT 418)
+
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: https://kuma.perlasarnold.me
+        description: Service Uptime Monitor — Authentik SSO (Cebu CT 419)
+
+    - fail2ban:
+        icon: fail2ban.png
+        href: https://fail2ban.perlasarnold.me
+        description: Intrusion Prevention Dashboard — NPM, SSH, Authentik & Wazuh (Cebu CT 406)
 
 - Core Hypervisors & Infrastructure:
     - Proxmox Bulakan:
         icon: proxmox.png
-        href: https://VLAN 1 [Management]:8006
+        href: https://192.168.1.25:8006
         description: Primary PVE Hypervisor Node (Host 1)
         widget:
           type: proxmox
-          url: https://VLAN 1 [Management]:8006
+          url: https://192.168.1.25:8006
           username: homepage-monitoring@pve!token-id
           password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
           node: Bulakan
@@ -35,11 +55,11 @@
 
     - Proxmox Cebu:
         icon: proxmox.png
-        href: https://VLAN 1 [Management]:8006
+        href: https://192.168.1.26:8006
         description: Secondary PVE Hypervisor Node (Host 2)
         widget:
           type: proxmox
-          url: https://VLAN 1 [Management]:8006
+          url: https://192.168.1.26:8006
           username: homepage-monitoring@pve!token-id
           password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
           node: cebu
@@ -47,11 +67,11 @@
 
     - Proxmox Dapitan:
         icon: proxmox.png
-        href: https://VLAN 1 [Management]:8006
+        href: https://192.168.1.27:8006
         description: Tertiary PVE Hypervisor Node (Host 3)
         widget:
           type: proxmox
-          url: https://VLAN 1 [Management]:8006
+          url: https://192.168.1.27:8006
           username: homepage-monitoring@pve!token-id
           password: 9a861457-a95b-48f6-8ce9-691e52b1a7e4
           node: Dapitan
@@ -59,117 +79,119 @@
 
     - Home Assistant OS:
         icon: home-assistant.png
-        href: http://VLAN 1 (Management):8123
+        href: http://192.168.1.111:8123
         description: Smart Home Automation Hub (Dapitan VM 111)
 
     - Pi-hole Primary (Bulakan):
         icon: pi-hole.png
-        href: http://VLAN 1 [Primary DNS]/admin
+        href: http://192.168.1.4/admin
         description: Network DNS Sinkhole & Adblock (Bulakan CT 301)
 
     - Pi-hole Secondary (Cebu):
         icon: pi-hole.png
-        href: http://VLAN 1 [Secondary DNS]/admin
+        href: http://192.168.1.5/admin
         description: Secondary DNS Sinkhole (Cebu CT 401)
 
     - PXE Boot Server:
         icon: linux.png
-        href: https://pxe.homelab-admin.me
+        href: https://pxe.perlasarnold.me
         description: Automated OS Provisioning & Netboot (Dapitan CT 513)
 
 - Media & Entertainment:
     - Immich Photos:
         icon: immich.png
-        href: https://immich.homelab-admin.me
+        href: https://immich.perlasarnold.me
         description: Self-Hosted High-Performance Photo Management (Dapitan CT 504)
 
     - Plex Media Server:
         icon: plex.png
-        href: https://plexdp.homelab-admin.me
+        href: https://plexdp.perlasarnold.me
         description: Hardware-Accelerated Plex Streaming (Dapitan CT 509)
 
     - Jellyfin HA Cluster:
         icon: jellyfin.png
-        href: https://jellyfin.homelab-admin.me
+        href: https://jellyfin.perlasarnold.me
         description: Active-Active High Availability Streaming (Bulakan/Dapitan)
 
     - Audiobookshelf:
         icon: audiobookshelf.png
-        href: https://audiobookbay.homelab-admin.me
+        href: https://audiobookbay.perlasarnold.me
         description: Audiobooks & Podcasts Library (Bulakan CT 100)
 
     - Calibre-Web:
         icon: calibre-web.png
-        href: http://VLAN 1 (Management):8083
+        href: http://192.168.1.115:8083
         description: Ebook Library Web Reader (Bulakan CT 113)
 
     - BookOrbit:
         icon: bookstack.png
-        href: https://bookorbit.homelab-admin.me
+        href: https://bookorbit.perlasarnold.me
         description: Modern Ebook Platform (Dapitan CT 514)
 
 - Automation & Arr Stack (Cebu CT 417):
     - Sonarr:
         icon: sonarr.png
-        href: https://sonarr.homelab-admin.me
+        href: https://sonarr.perlasarnold.me
         description: TV Series Download & Library Automation
         widget:
           type: sonarr
-          url: http://VLAN 110 (Services):8989
-          key: <YOUR_SONARR_API_KEY>
+          url: http://192.168.110.42:8989
+          key: 01de344fab374c4fa5f2e0ea2fd31e3e
 
-    - Transmission VPN:
-        icon: transmission.png
-        href: https://torrent.homelab-admin.me
-        description: Surfshark WireGuard BitTorrent Client
+    - qBittorrent:
+        icon: qbittorrent.png
+        href: https://torrent.perlasarnold.me
+        description: Surfshark WireGuard BitTorrent Client (Cebu CT 417)
         widget:
-          type: transmission
-          url: http://VLAN 110 (Services):9091
+          type: qbittorrent
+          url: http://192.168.110.42:8080
+          username: admin
+          password: ""
 
     - Readarr:
         icon: readarr.png
-        href: https://readarr.homelab-admin.me
+        href: https://readarr.perlasarnold.me
         description: Book & Audiobook Automation
 
     - Radarr:
         icon: radarr.png
-        href: http://VLAN 110 (Services):7878
+        href: http://192.168.110.42:7878
         description: Movie Collection & Download Automation
 
     - Prowlarr:
         icon: prowlarr.png
-        href: http://VLAN 110 (Services):9696
+        href: http://192.168.110.42:9696
         description: Centralized Indexer & Torrent Tracker Sync
 
     - Bazarr:
         icon: bazarr.png
-        href: http://VLAN 110 (Services):6767
+        href: http://192.168.110.42:6767
         description: Subtitle Management Automation
 
     - Wizarr:
         icon: plex.png
-        href: http://VLAN 110 (Services):5690
+        href: http://192.168.110.42:5690
         description: Media Invitation & User Onboarding Portal
 
 - Storage & Synology Cloud (PNAS):
     - Synology DSM:
         icon: synology.png
-        href: http://VLAN 1 [Management]:5000
+        href: http://192.168.1.12:5000
         description: Synology DiskStation Manager Interface
 
     - Synology Photos:
         icon: synology-photos.png
-        href: http://VLAN 1 [Management]:5000/?launchApp=SYNO.Foto.AppInstance
+        href: http://192.168.1.12:5000/?launchApp=SYNO.Foto.AppInstance
         description: Synology Centralized Photo Management
 
     - Synology Drive:
         icon: synology-drive.png
-        href: http://VLAN 1 [Management]:5000/?launchApp=SYNO.SDS.Drive.Application
+        href: http://192.168.1.12:5000/?launchApp=SYNO.SDS.Drive.Application
         description: Synology Personal Cloud Drive Sync
 
     - Synology File Station:
         icon: synology.png
-        href: http://VLAN 1 [Management]:5000/?launchApp=SYNO.SDS.App.FileStation3.Instance
+        href: http://192.168.1.12:5000/?launchApp=SYNO.SDS.App.FileStation3.Instance
         description: Synology Cloud File Browser
 
 - Cloud & Infrastructure Management:
@@ -213,15 +235,15 @@
 - Productivity & Dashboards:
     - Obsidian Sync:
         icon: obsidian.png
-        href: https://obsidian.homelab-admin.me
+        href: https://obsidian.perlasarnold.me
         description: Knowledge Base & Vault Sync
 
     - Heimdall:
         icon: heimdall.png
-        href: https://heimdall.homelab-admin.me
+        href: https://heimdall.perlasarnold.me
         description: Secondary Dashboard Launcher
 
     - Main Website:
         icon: github.png
-        href: https://homelab-admin.me
-        description: Personal Blog & Portfolio (homelab-admin.github.io)
+        href: https://perlasarnold.me
+        description: Personal Blog & Portfolio (perlasarnold.github.io)

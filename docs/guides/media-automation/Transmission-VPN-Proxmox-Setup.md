@@ -1,5 +1,10 @@
 # Guide: Transmission with Surfshark VPN and SMB Storage on Proxmox
 
+> [!WARNING]
+> **ARCHIVED / DECOMMISSIONED (2026-08-31)**  
+> Transmission has been superseded and migrated to standalone **qBittorrent** with a dedicated Gluetun WireGuard VPN sidecar.  
+> See the active migration runbook: [`Transmission-to-qBittorrent-Gluetun-Migration-2026-08-31.md`](./Transmission-to-qBittorrent-Gluetun-Migration-2026-08-31.md)
+
 * **Date:** May 19, 2026  
 * **Objective:** Establish a highly secure, leak-proof BitTorrent download server running Transmission, routed exclusively through a Surfshark VPN using Gluetun. All completed downloads are directly saved to the Synology NAS SMB share (`\\PNAS\Seagate\Share\Downloads\`), and the service is seamlessly integrated into the active Arr stack (Radarr, Sonarr, Prowlarr).
 * **Maintainer:** Perlas  
